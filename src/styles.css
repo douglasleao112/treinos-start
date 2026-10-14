@@ -471,8 +471,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   gap: 12px;
   padding: 16px 30px 12px;
 }
+.day-name-field, .day-note-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
 .field-heading {
-  min-height: 17px;
+  height: 24px;
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -528,7 +534,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   padding: 0 12px;
   color: var(--ink);
   background: #fbfcfd;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
 }
+.day-name-field input::placeholder, .day-note-field input::placeholder { color: #9aa5b4; font: inherit; }
 .day-name-field input:focus, .day-note-field input:focus {
   border-color: var(--primary);
   outline: 3px solid var(--primary-soft);
