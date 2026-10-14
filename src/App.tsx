@@ -812,7 +812,7 @@ function App() {
             <div className="exercise-library-grid">
               {visibleExerciseLibrary.map((exercise) => {
                 const volumeText = exerciseVolumeText(exercise);
-                return <article className={`exercise-library-card${exercise.isCustom ? ' custom' : ''}`} key={exercise.id}>
+                return <article className={`exercise-library-card ${exercise.isCustom ? 'custom' : 'system'}`} key={exercise.id}>
                   <button className="exercise-library-thumb" onClick={() => exercise.youtubeId && setVideoExercise(exercise)} disabled={!exercise.youtubeId} aria-label={exercise.youtubeId ? `Vídeo de ${exercise.name}` : `Sem vídeo para ${exercise.name}`}>
                     {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <Dumbbell size={20} />}
                     {exercise.youtubeId && <span><i><Play size={13} fill="currentColor" /></i></span>}
