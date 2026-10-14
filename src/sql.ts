@@ -23,6 +23,11 @@ export function buildSupabaseSql(workouts: Workout[], catalog: Exercise[]): stri
       workout.days.flatMap((day) => day.exercises.map((exercise) => exercise.exerciseId)),
     ),
   );
+  const catalogExerciseIds = new Set(catalog.map((exercise) => exercise.id));
+  const missingExerciseIds = [...usedExerciseIds].filter((exerciseId) => !catalogExerciseIds.has(exerciseId));
+  if (missingExerciseIds.length) {
+    throw new Error(`Não foi possível exportar: ${missingExerciseIds.length} exercício(s) não existem mais no catálogo.`);
+  }
   const exerciseNames = Object.fromEntries(
     catalog
       .filter((exercise) => usedExerciseIds.has(exercise.id))

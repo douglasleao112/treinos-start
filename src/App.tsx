@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import type { Exercise, StudioData, Workout, WorkoutDay, WorkoutExercise, WorkoutSet } from './types';
 import { FALLBACK_EXERCISES, loadExerciseCatalog } from './catalog';
-import { emptyStudioData, hydrateExerciseNotes, loadStudioData, saveStudioData } from './storage';
+import { exportStudioBackup, hydrateExerciseNotes, importStudioBackup, loadStudioData, saveStudioData } from './storage';
 import { exportSupabaseSql, importSupabaseSql } from './sql';
 
 const WEEKDAYS = [
@@ -613,7 +613,14 @@ function App() {
 
   const handleImport = async (file: File) => {
     try {
-      const parsed = importSupabaseSql(await file.text());
+      const content = await file.text();
+      if (file.name.toLocaleLowerCase('pt-BR').endsWith('.json')) {
+        const restored = importStudioBackup(content);
+        setData(restored);
+        setToast({ tone: 'success', text: `${restored.workouts.length} treino(s) e ${restored.customExercises.length} exercício(s) restaurado(s) do backup.` });
+        return;
+      }
+      const parsed = importSupabaseSql(content);
       const workouts = parsed.workouts;
       const valid = workouts.filter((workout: any) => workout?.id && workout?.name && Array.isArray(workout?.days));
       const customExercises = Array.isArray(parsed.customExercises)
@@ -633,6 +640,15 @@ function App() {
       setToast({ tone: 'error', text: error?.message || 'Não foi possível importar o arquivo SQL.' });
     } finally {
       if (importRef.current) importRef.current.value = '';
+    }
+  };
+
+  const handleSqlExport = () => {
+    try {
+      exportSupabaseSql(data.workouts, exerciseCatalog);
+      setToast({ tone: 'success', text: 'Arquivo SQL completo exportado.' });
+    } catch (error: any) {
+      setToast({ tone: 'error', text: error?.message || 'Não foi possível gerar o arquivo SQL.' });
     }
   };
 
@@ -778,9 +794,10 @@ function App() {
             : 'Salvando localmente...'}
         </div>
         <div className="header-actions">
-          <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Importar SQL</button>
-          <button className="button primary" onClick={() => { exportSupabaseSql(data.workouts, exerciseCatalog); setToast({ tone: 'success', text: 'Arquivo SQL exportado.' }); }} disabled={!data.workouts.length && !data.customExercises.length}><Database size={16} /> Exportar SQL</button>
-          <input ref={importRef} type="file" accept="application/sql,text/plain,.sql" hidden onChange={(event) => event.target.files?.[0] && void handleImport(event.target.files[0])} />
+          <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Importar arquivo</button>
+          <button className="button ghost" onClick={() => { exportStudioBackup(data); setToast({ tone: 'success', text: 'Backup completo baixado.' }); }} disabled={!data.workouts.length && !data.customExercises.length}><HardDrive size={16} /> Baixar backup</button>
+          <button className="button primary" onClick={handleSqlExport} disabled={!data.workouts.length && !data.customExercises.length}><Database size={16} /> Exportar SQL</button>
+          <input ref={importRef} type="file" accept="application/sql,application/json,text/plain,.sql,.json" hidden onChange={(event) => event.target.files?.[0] && void handleImport(event.target.files[0])} />
         </div>
       </header>
 
