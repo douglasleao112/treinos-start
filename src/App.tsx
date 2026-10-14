@@ -9,10 +9,8 @@ import {
   Clipboard,
   Copy,
   Database,
-  Download,
   Dumbbell,
   ExternalLink,
-  FileJson,
   FileUp,
   GripVertical,
   HardDrive,
@@ -28,8 +26,8 @@ import {
 } from 'lucide-react';
 import type { Exercise, StudioData, Workout, WorkoutDay, WorkoutExercise, WorkoutSet } from './types';
 import { FALLBACK_EXERCISES, loadExerciseCatalog } from './catalog';
-import { emptyStudioData, exportBackup, loadStudioData, saveStudioData } from './storage';
-import { buildSupabaseSql, exportSupabaseSql } from './sql';
+import { emptyStudioData, loadStudioData, saveStudioData } from './storage';
+import { exportSupabaseSql, importSupabaseSql } from './sql';
 
 const WEEKDAYS = [
   { value: 0, short: 'DOM', label: 'Domingo' },
@@ -141,7 +139,6 @@ function App() {
   const [copiedDay, setCopiedDay] = useState<WorkoutDay | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [showSqlPreview, setShowSqlPreview] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
   const [activePage, setActivePage] = useState<'workouts' | 'exercises'>('workouts');
@@ -335,18 +332,17 @@ function App() {
 
   const handleImport = async (file: File) => {
     try {
-      const parsed = JSON.parse(await file.text());
-      const workouts = Array.isArray(parsed) ? parsed : parsed?.workouts;
-      if (!Array.isArray(workouts)) throw new Error('Arquivo sem lista de treinos.');
+      const parsed = importSupabaseSql(await file.text());
+      const workouts = parsed.workouts;
       const valid = workouts.filter((workout: any) => workout?.id && workout?.name && Array.isArray(workout?.days));
-      const customExercises = Array.isArray(parsed?.customExercises)
+      const customExercises = Array.isArray(parsed.customExercises)
         ? parsed.customExercises.filter((exercise: any) => exercise?.id && exercise?.name)
         : [];
       if (!valid.length && !customExercises.length) throw new Error('Nenhum treino ou exercício válido encontrado.');
       setData({ version: 1, workouts: valid, customExercises, selectedWorkoutId: valid[0]?.id ?? null, updatedAt: now() });
-      setToast({ tone: 'success', text: `${valid.length} treino(s) e ${customExercises.length} exercício(s) restaurado(s).` });
+      setToast({ tone: 'success', text: `${valid.length} treino(s) e ${customExercises.length} exercício(s) importado(s) do SQL.` });
     } catch (error: any) {
-      setToast({ tone: 'error', text: error?.message || 'Não foi possível importar o backup.' });
+      setToast({ tone: 'error', text: error?.message || 'Não foi possível importar o arquivo SQL.' });
     } finally {
       if (importRef.current) importRef.current.value = '';
     }
@@ -429,10 +425,9 @@ function App() {
           <b>Studio de Treinos</b>
         </div>
         <div className="header-actions">
-          <button className="button ghost" onClick={() => exportBackup(data)} disabled={!data.workouts.length && !data.customExercises.length}><FileJson size={16} /> Backup</button>
-          <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Restaurar</button>
-          <button className="button primary" onClick={() => setShowSqlPreview(true)} disabled={!data.workouts.length && !data.customExercises.length}><Database size={16} /> Exportar SQL</button>
-          <input ref={importRef} type="file" accept="application/json,.json" hidden onChange={(event) => event.target.files?.[0] && void handleImport(event.target.files[0])} />
+          <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Importar SQL</button>
+          <button className="button primary" onClick={() => { exportSupabaseSql(data.workouts, exerciseCatalog); setToast({ tone: 'success', text: 'Arquivo SQL exportado.' }); }} disabled={!data.workouts.length && !data.customExercises.length}><Database size={16} /> Exportar SQL</button>
+          <input ref={importRef} type="file" accept="application/sql,text/plain,.sql" hidden onChange={(event) => event.target.files?.[0] && void handleImport(event.target.files[0])} />
         </div>
       </header>
 
@@ -633,15 +628,6 @@ function App() {
         <div className="modal-icon danger-bg"><Trash2 size={25} /></div>
         <h2>Excluir este treino?</h2><p>Ele será removido somente deste navegador. Essa ação não pode ser desfeita.</p>
         <div className="modal-actions"><button className="button ghost" onClick={() => setConfirmDeleteId(null)}>Cancelar</button><button className="button danger-fill" onClick={() => removeWorkout(confirmDeleteId)}>Excluir</button></div>
-      </div></div>}
-
-      {showSqlPreview && <div className="modal-layer"><div className="modal sql-modal">
-        <button className="modal-close" onClick={() => setShowSqlPreview(false)}><X size={20} /></button>
-        <div className="modal-title-row"><div className="modal-icon"><Database size={25} /></div><div><p className="eyebrow">EXPORTAÇÃO FINAL</p><h2>Arquivo SQL para o Supabase</h2></div></div>
-        <div className="export-summary"><div><b>{data.workouts.length}</b><span>treino(s)</span></div><div><b>{data.customExercises.length}</b><span>novo(s) exercício(s)</span></div><div><b>Seguro</b><span>preserva dados existentes</span></div></div>
-        <div className="info-box"><Check size={18} /><p>O SQL atualiza somente a biblioteca de treinos do painel, substituindo treinos com o mesmo ID e mantendo todos os outros. Ele também atualiza a revisão do banco para o aplicativo reconhecer a importação.</p></div>
-        <textarea className="sql-preview" readOnly value={buildSupabaseSql(data.workouts, exerciseCatalog)} />
-        <div className="modal-actions"><button className="button ghost" onClick={() => setShowSqlPreview(false)}>Voltar</button><button className="button primary" onClick={() => { exportSupabaseSql(data.workouts, exerciseCatalog); setToast({ tone: 'success', text: 'Arquivo SQL exportado.' }); }}><Download size={17} /> Baixar arquivo SQL</button></div>
       </div></div>}
 
       {videoExercise?.youtubeId && <div className="modal-layer video-layer"><div className="modal video-modal">

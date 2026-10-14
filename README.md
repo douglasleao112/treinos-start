@@ -6,14 +6,15 @@ O editor reproduz o fluxo do painel administrativo e inclui um snapshot dos 205 
 
 ## O que fica salvo
 
-Os treinos e exercícios personalizados são salvos automaticamente no `localStorage` do navegador. Para evitar perda de trabalho, use **Backup** periodicamente e guarde o arquivo JSON.
+Os treinos e exercícios personalizados são salvos automaticamente no `localStorage` do navegador. O botão **Exportar SQL** baixa um único arquivo que funciona tanto para importar no Supabase quanto para abrir os dados em outra instalação do Studio.
 
 ## Exportação final
 
-1. Clique em **Exportar SQL**.
-2. Confira a quantidade de treinos e baixe o arquivo `.sql`.
-3. No Supabase, abra **SQL Editor**, cole o arquivo inteiro e execute.
-4. O script cadastra ou atualiza primeiro os exercícios personalizados e depois adiciona os novos treinos. Treinos com o mesmo ID são substituídos; os demais dados do painel são preservados.
+1. Clique em **Exportar SQL** para baixar o arquivo `.sql`.
+2. No Supabase, abra **SQL Editor**, cole o arquivo inteiro e execute.
+3. O script cadastra ou atualiza primeiro os exercícios personalizados e depois adiciona os novos treinos. Treinos com o mesmo ID são substituídos; os demais dados do painel são preservados.
+
+Para revisar o trabalho em outro navegador ou computador, abra o Studio e clique em **Importar SQL**. Selecione o mesmo arquivo exportado; os treinos e exercícios serão carregados para avaliação.
 
 ## Desenvolvimento local
 

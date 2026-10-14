@@ -35,11 +35,3 @@ export function downloadText(filename: string, content: string, type = 'text/pla
   anchor.click();
   URL.revokeObjectURL(url);
 }
-
-export function exportBackup(data: StudioData) {
-  downloadText(
-    `startfit-treinos-backup-${new Date().toISOString().slice(0, 10)}.json`,
-    JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 2),
-    'application/json;charset=utf-8',
-  );
-}
