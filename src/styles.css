@@ -31,9 +31,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .brand { display: flex; align-items: center; min-width: 260px; }
 .brand img { display: block; width: 86px; height: 35px; object-fit: contain; }
 .brand b { letter-spacing: 0; font-size: 12px; color: #566478; border-left: 1px solid var(--line); margin-left: 15px; padding-left: 15px; }
-.save-status { font-size: 12px; color: #627184; display: flex; align-items: center; gap: 7px; flex: 1; }
-.status-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 999px; box-shadow: 0 0 0 4px var(--primary-soft); }
-.header-actions { display: flex; gap: 8px; }
+.header-actions { display: flex; gap: 8px; margin-left: auto; }
 
 .button { min-height: 40px; border-radius: 10px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: .18s ease; white-space: nowrap; }
 .button:hover:not(:disabled) { transform: translateY(-1px); }
@@ -70,7 +68,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .workout-card-actions button.danger:hover, .exercise-actions button.danger:hover { color: var(--danger); background: #fff0f0; }
 .empty-list { color: #8b98a8; text-align: center; padding: 35px 8px; font-size: 12px; }
 .empty-list svg { opacity: .4; }
-.local-note { margin-top: auto; border-radius: 10px; padding: 11px; color: #6a7788; background: #f6f8fa; display: flex; gap: 9px; align-items: flex-start; font-size: 10px; line-height: 1.45; }
 
 .editor-area { padding: 28px 34px 70px; min-width: 0; }
 .editor-card { max-width: 1120px; margin: 0 auto; background: white; border: 1px solid var(--line); border-radius: 17px; box-shadow: var(--shadow); overflow: visible; }
@@ -167,7 +164,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 @media (max-width: 900px) {
   .topbar { padding: 0 14px; height: 62px; }
   .brand { min-width: 0; flex: 1; }
-  .brand b, .save-status, .header-actions .ghost { display: none; }
+  .brand b, .header-actions .ghost { display: none; }
   .workspace { display: block; min-height: calc(100vh - 62px); }
   .library { display: none; position: fixed; inset: 62px 0 0; z-index: 35; border: 0; }
   .library.mobile-open { display: flex; }
@@ -233,7 +230,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .workout-volume-badges span { padding: 4px 7px; border-radius: 5px; color: white; background: #a629e5; font-size: 8px; font-weight: 800; }
 .workout-day-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: auto; padding-top: 10px; }
 .workout-day-chips span { padding: 5px 9px; border-radius: 6px; color: #169775; background: #e4faf3; border: 1px solid #b8ecd9; font-size: 8px; font-weight: 700; }
-.local-note { grid-column: 1 / -1; margin: 22px 0 0; width: fit-content; }
 .empty-list { grid-column: 1 / -1; }
 
 .editor-area {

@@ -149,7 +149,6 @@ function App() {
   const [exerciseGroup, setExerciseGroup] = useState('');
   const [exercisePage, setExercisePage] = useState(1);
   const [exerciseDraft, setExerciseDraft] = useState<Exercise | null>(null);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
   const selectedWorkout = data.workouts.find((item) => item.id === data.selectedWorkoutId) || null;
@@ -158,7 +157,6 @@ function App() {
 
   useEffect(() => {
     saveStudioData(data);
-    setSavedAt(new Date());
   }, [data]);
 
   useEffect(() => {
@@ -430,7 +428,6 @@ function App() {
           <img src="/startfit-logo.png" alt="STARTFIT" />
           <b>Studio de Treinos</b>
         </div>
-        <div className="save-status"><span className="status-dot" /> Salvo localmente {savedAt ? `às ${savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}</div>
         <div className="header-actions">
           <button className="button ghost" onClick={() => exportBackup(data)} disabled={!data.workouts.length && !data.customExercises.length}><FileJson size={16} /> Backup</button>
           <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Restaurar</button>
@@ -487,7 +484,6 @@ function App() {
             })}
             {!filteredWorkouts.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum treino encontrado.</p></div>}
           </div>
-          <div className="local-note"><HardDrive size={16} /><span>Os dados permanecem somente neste navegador até você exportar.</span></div>
           </> : <>
             <div className="library-header exercise-library-header"><div><h1>Exercícios</h1><small>{exerciseCatalog.length} exercícios cadastrados · {data.customExercises.length} criado(s) aqui</small></div></div>
             <button className="button primary full" onClick={newExercise}><Plus size={18} /> Novo exercício</button>
@@ -508,7 +504,6 @@ function App() {
               {!visibleExerciseLibrary.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum exercício encontrado.</p></div>}
             </div>
             <div className="exercise-pagination"><span>Mostrando {(exercisePage - 1) * 24 + (visibleExerciseLibrary.length ? 1 : 0)}–{(exercisePage - 1) * 24 + visibleExerciseLibrary.length} de {filteredExerciseLibrary.length}</span><div><button disabled={exercisePage <= 1} onClick={() => setExercisePage((page) => page - 1)}>‹</button><b>{exercisePage} / {exercisePageCount}</b><button disabled={exercisePage >= exercisePageCount} onClick={() => setExercisePage((page) => page + 1)}>›</button></div></div>
-            <div className="local-note"><HardDrive size={16} /><span>Exercícios criados aqui ficam no navegador e serão incluídos no backup e no SQL.</span></div>
           </>}
         </aside>
 
