@@ -28,8 +28,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   height: 70px; padding: 0 28px; display: flex; align-items: center; gap: 24px;
   background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 40;
 }
-.brand { display: flex; align-items: center; color: #207f7b; font-size: 23px; letter-spacing: -.08em; font-weight: 700; min-width: 260px; }
-.brand i { color: #65e997; font-style: normal; font-size: 20px; margin: 0 -1px; filter: drop-shadow(0 2px 5px rgba(36,220,124,.35)); }
+.brand { display: flex; align-items: center; min-width: 260px; }
+.brand img { display: block; width: 86px; height: 35px; object-fit: contain; }
 .brand b { letter-spacing: 0; font-size: 12px; color: #566478; border-left: 1px solid var(--line); margin-left: 15px; padding-left: 15px; }
 .save-status { font-size: 12px; color: #627184; display: flex; align-items: center; gap: 7px; flex: 1; }
 .status-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 999px; box-shadow: 0 0 0 4px var(--primary-soft); }
@@ -195,7 +195,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 @media (max-width: 520px) {
   .header-actions .primary { padding: 0 10px; }
   .header-actions .primary svg { display: none; }
-  .brand { font-size: 19px; }
+  .brand img { width: 76px; height: 31px; }
   .name-field input { font-size: 17px; }
   .weekday-tabs button { min-height: 58px; }
   .exercise-content { padding: 11px; }

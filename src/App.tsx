@@ -427,7 +427,7 @@ function App() {
     <div className="app-shell">
       <header className="topbar">
         <div className="brand" aria-label="STARTFIT">
-          <span>ST</span><i>▲</i><span>RT</span>
+          <img src="/startfit-logo.png" alt="STARTFIT" />
           <b>Studio de Treinos</b>
         </div>
         <div className="save-status"><span className="status-dot" /> Salvo localmente {savedAt ? `às ${savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}</div>
