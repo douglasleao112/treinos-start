@@ -759,6 +759,16 @@ function App() {
                     }}
                     title="Arraste para trocar o treino entre os dias"
                   >
+                    <span className="weekday-drag-grid" aria-hidden="true">
+                      <svg viewBox="0 0 8 12" fill="currentColor">
+                        <circle cx="2" cy="2" r="1" />
+                        <circle cx="6" cy="2" r="1" />
+                        <circle cx="2" cy="6" r="1" />
+                        <circle cx="6" cy="6" r="1" />
+                        <circle cx="2" cy="10" r="1" />
+                        <circle cx="6" cy="10" r="1" />
+                      </svg>
+                    </span>
                     <span>{weekday.short}</span><b>{count}</b>
                   </button>;
                 })}

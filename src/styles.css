@@ -400,6 +400,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   overflow: visible;
 }
 .weekday-tabs button {
+  position: relative;
   min-width: 0;
   min-height: 46px;
   margin-bottom: -1px;
@@ -411,9 +412,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   font-size: 10px;
   cursor: grab;
   user-select: none;
+  touch-action: none;
 }
 .weekday-tabs button:active { cursor: grabbing; }
-.weekday-tabs button::before { content: '⋮'; color: #c7d0da; font-size: 13px; line-height: 1; }
+.weekday-drag-grid { position: absolute; left: 6px; top: 50%; width: 10px; height: 16px; color: #aebbc8; opacity: .58; transform: translateY(-50%); pointer-events: none; }
+.weekday-drag-grid svg { display: block; width: 100%; height: 100%; }
+.weekday-tabs button.active .weekday-drag-grid { color: var(--primary); opacity: .48; }
 .weekday-tabs button b { display: none; }
 .weekday-tabs button.active {
   color: var(--primary-dark);
