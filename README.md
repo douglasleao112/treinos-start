@@ -2,7 +2,7 @@
 
 Ambiente independente para um colaborador montar treinos-modelo sem acessar o painel administrativo do STARTFIT.
 
-O editor reproduz o fluxo do painel administrativo e inclui um snapshot dos 205 exercícios cadastrados no STARTFIT, com seus grupamentos e vídeos. O catálogo fica disponível mesmo sem login no aplicativo. Na aba **Exercícios**, também é possível cadastrar exercícios próprios com vídeo, grupamento, descanso e orientação técnica.
+O editor reproduz o fluxo do painel administrativo e inclui um snapshot dos 205 exercícios cadastrados no STARTFIT, com seus grupamentos e vídeos. O catálogo fica disponível mesmo sem login no aplicativo. Na aba **Exercícios**, também é possível cadastrar exercícios próprios com vídeo, músculos primário e secundários e orientação técnica. Exercícios do banco são protegidos; somente os criados no Studio podem ser editados ou excluídos.
 
 ## O que fica salvo
 

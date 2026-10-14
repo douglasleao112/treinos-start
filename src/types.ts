@@ -7,6 +7,9 @@ export type Exercise = {
   videoOrientation?: 'auto' | 'vertical' | 'horizontal';
   defaultRestSeconds?: number | null;
   note?: string;
+  secondaryMuscleGroups?: string[];
+  volumePoints?: Record<string, number>;
+  equivalentExerciseIds?: string[];
   isCustom?: boolean;
   createdAt?: string;
 };

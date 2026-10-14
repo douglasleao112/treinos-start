@@ -70,21 +70,26 @@ begin
            youtube_id = nullif(v_exercise_definition ->> 'youtubeId', ''),
            youtube_url = nullif(v_exercise_definition ->> 'youtubeUrl', ''),
            video_orientation = coalesce(nullif(v_exercise_definition ->> 'videoOrientation', ''), 'auto'),
-           default_rest_seconds = coalesce((v_exercise_definition ->> 'defaultRestSeconds')::integer, 60),
-           note = coalesce(v_exercise_definition ->> 'note', '')
+           default_rest_seconds = (v_exercise_definition ->> 'defaultRestSeconds')::integer,
+           note = coalesce(v_exercise_definition ->> 'note', ''),
+           volume_points = coalesce(v_exercise_definition -> 'volumePoints', '{}'::jsonb),
+           equivalent_exercise_ids = coalesce(v_exercise_definition -> 'equivalentExerciseIds', '[]'::jsonb)
      where lower(trim(name)) = lower(trim(v_exercise_definition ->> 'name'));
 
     if not found then
       insert into public.public_exercise_items (
-        name, muscle_group, youtube_id, youtube_url, video_orientation, default_rest_seconds, note
+        name, muscle_group, youtube_id, youtube_url, video_orientation, default_rest_seconds, note,
+        volume_points, equivalent_exercise_ids
       ) values (
         trim(v_exercise_definition ->> 'name'),
         nullif(v_exercise_definition ->> 'muscleGroup', ''),
         nullif(v_exercise_definition ->> 'youtubeId', ''),
         nullif(v_exercise_definition ->> 'youtubeUrl', ''),
         coalesce(nullif(v_exercise_definition ->> 'videoOrientation', ''), 'auto'),
-        coalesce((v_exercise_definition ->> 'defaultRestSeconds')::integer, 60),
-        coalesce(v_exercise_definition ->> 'note', '')
+        (v_exercise_definition ->> 'defaultRestSeconds')::integer,
+        coalesce(v_exercise_definition ->> 'note', ''),
+        coalesce(v_exercise_definition -> 'volumePoints', '{}'::jsonb),
+        coalesce(v_exercise_definition -> 'equivalentExerciseIds', '[]'::jsonb)
       );
     end if;
   end loop;

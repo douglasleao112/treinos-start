@@ -337,8 +337,9 @@ function App() {
   };
 
   const newExercise = () => setExerciseDraft({
-    id: uid(), name: '', muscleGroup: '', youtubeId: '', youtubeUrl: '', videoOrientation: 'auto',
-    defaultRestSeconds: 60, note: '', isCustom: true, createdAt: now(),
+    id: uid(), name: '', muscleGroup: '', youtubeId: '', youtubeUrl: '', videoOrientation: 'vertical',
+    defaultRestSeconds: null, note: '', secondaryMuscleGroups: [''], volumePoints: {}, equivalentExerciseIds: [],
+    isCustom: true, createdAt: now(),
   });
 
   const saveExercise = () => {
@@ -355,11 +356,22 @@ function App() {
       setToast({ tone: 'error', text: 'Já existe um exercício com esse nome.' });
       return;
     }
+    const secondaryMuscleGroups = Array.from(new Set(exerciseDraft.secondaryMuscleGroups || []))
+      .filter((group) => group && group !== exerciseDraft.muscleGroup)
+      .slice(0, 2);
+    const volumePoints = exerciseDraft.muscleGroup
+      ? Object.fromEntries([[exerciseDraft.muscleGroup, 1], ...secondaryMuscleGroups.map((group) => [group, 0.5])])
+      : {};
     const normalized = {
       ...exerciseDraft,
       name: exerciseDraft.name.trim(),
       youtubeId: extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''),
       youtubeUrl: exerciseDraft.youtubeUrl?.trim() || '',
+      videoOrientation: exerciseDraft.videoOrientation || 'vertical',
+      defaultRestSeconds: null,
+      secondaryMuscleGroups,
+      volumePoints,
+      equivalentExerciseIds: exerciseDraft.equivalentExerciseIds || [],
       isCustom: true,
     };
     setData((current) => ({
@@ -373,6 +385,10 @@ function App() {
   };
 
   const deleteCustomExercise = (exercise: Exercise) => {
+    if (!exercise.isCustom || !data.customExercises.some((item) => item.id === exercise.id)) {
+      setToast({ tone: 'error', text: 'Exercícios do banco de dados não podem ser excluídos.' });
+      return;
+    }
     const isUsed = data.workouts.some((workout) =>
       workout.days.some((day) => day.exercises.some((item) => item.exerciseId === exercise.id))
     );
@@ -593,17 +609,24 @@ function App() {
 
       {exerciseDraft && <div className="modal-layer"><div className="modal exercise-form-modal">
         <button className="modal-close" onClick={() => setExerciseDraft(null)} aria-label="Fechar cadastro"><X size={20} /></button>
-        <div className="modal-title-row"><div className="modal-icon"><Dumbbell size={24} /></div><div><p className="eyebrow">BIBLIOTECA LOCAL</p><h2>{data.customExercises.some((item) => item.id === exerciseDraft.id) ? 'Editar exercício' : 'Novo exercício'}</h2></div></div>
-        <div className="exercise-form-grid">
-          <label className="wide">Nome do exercício<input value={exerciseDraft.name} onChange={(event) => setExerciseDraft({ ...exerciseDraft, name: event.target.value })} placeholder="Ex.: Supino reto com barra" /></label>
-          <label>Grupamento<select value={exerciseDraft.muscleGroup || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, muscleGroup: event.target.value })}><option value="">Selecione...</option>{MUSCLE_GROUPS.map((group) => <option key={group}>{group}</option>)}</select></label>
-          <label>Descanso padrão (s)<input type="number" min="0" value={exerciseDraft.defaultRestSeconds ?? 60} onChange={(event) => setExerciseDraft({ ...exerciseDraft, defaultRestSeconds: Number(event.target.value) })} /></label>
-          <label className="wide">Link ou ID do vídeo do YouTube<input value={exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, youtubeUrl: event.target.value, youtubeId: extractYoutubeId(event.target.value) })} placeholder="https://www.youtube.com/shorts/..." /></label>
-          <label>Orientação do vídeo<select value={exerciseDraft.videoOrientation || 'auto'} onChange={(event) => setExerciseDraft({ ...exerciseDraft, videoOrientation: event.target.value as Exercise['videoOrientation'] })}><option value="auto">Automática</option><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select></label>
-          <label className="wide">Observação<textarea value={exerciseDraft.note || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, note: event.target.value })} placeholder="Dica de execução ou orientação técnica..." /></label>
-        </div>
-        {extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || '') && <div className="exercise-video-preview"><img src={`https://img.youtube.com/vi/${extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || '')}/mqdefault.jpg`} alt="Prévia do vídeo" /><div><strong>Vídeo identificado</strong><span>{extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || '')}</span></div></div>}
-        <div className="modal-actions"><button className="button ghost" onClick={() => setExerciseDraft(null)}>Cancelar</button><button className="button primary" onClick={saveExercise}><Check size={16} /> Salvar exercício</button></div>
+        <div className="exercise-form-heading"><h2>{data.customExercises.some((item) => item.id === exerciseDraft.id) ? 'Editar exercício' : 'Novo exercício'}</h2></div>
+        <div className="exercise-form-body"><div className="exercise-form-grid">
+          <label className="wide">Nome<input autoFocus value={exerciseDraft.name} onChange={(event) => setExerciseDraft({ ...exerciseDraft, name: event.target.value })} placeholder="Ex.: Supino reto" /></label>
+          <label>Músculo Primário<select value={exerciseDraft.muscleGroup || ''} onChange={(event) => { const muscleGroup = event.target.value; setExerciseDraft({ ...exerciseDraft, muscleGroup, secondaryMuscleGroups: (exerciseDraft.secondaryMuscleGroups || ['']).map((group) => group === muscleGroup ? '' : group) }); }}><option value="">Selecione...</option>{MUSCLE_GROUPS.map((group) => <option key={group}>{group}</option>)}</select></label>
+          <div className="secondary-muscles"><span>Músculo secundário</span>
+            {Array.from({ length: Math.max(1, exerciseDraft.secondaryMuscleGroups?.length || 0) }).map((_, index) => {
+              const selected = exerciseDraft.secondaryMuscleGroups?.[index] || '';
+              return <select key={index} value={selected} disabled={!exerciseDraft.muscleGroup} onChange={(event) => { const next = [...(exerciseDraft.secondaryMuscleGroups || [''])]; next[index] = event.target.value; setExerciseDraft({ ...exerciseDraft, secondaryMuscleGroups: next }); }}>
+                <option value="">{exerciseDraft.muscleGroup ? 'Nenhum' : 'Selecione o principal'}</option>
+                {MUSCLE_GROUPS.filter((group) => group !== exerciseDraft.muscleGroup && (group === selected || !(exerciseDraft.secondaryMuscleGroups || []).includes(group))).map((group) => <option key={group}>{group}</option>)}
+              </select>;
+            })}
+            {(exerciseDraft.secondaryMuscleGroups?.length || 0) < 2 && <button type="button" onClick={() => setExerciseDraft({ ...exerciseDraft, secondaryMuscleGroups: [...(exerciseDraft.secondaryMuscleGroups || ['']), ''].slice(0, 2) })}>Deseja adicionar outro?</button>}
+          </div>
+          <label className="wide">Link ou ID do vídeo do YouTube<input value={exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''} onChange={(event) => { const value = event.target.value.trim(); setExerciseDraft({ ...exerciseDraft, youtubeUrl: value, youtubeId: extractYoutubeId(value) }); }} placeholder="Ex.: https://www.youtube.com/shorts/UHa9U-O09_U" /></label>
+          <label className="wide">Observação (opcional)<textarea rows={2} value={exerciseDraft.note || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, note: event.target.value })} placeholder="Dica de execução..." /></label>
+        </div></div>
+        <div className="modal-actions exercise-form-actions"><button className="button ghost" onClick={() => setExerciseDraft(null)}>Cancelar</button><button className="button primary" onClick={saveExercise}>Salvar</button></div>
       </div></div>}
 
       {confirmDeleteId && <div className="modal-layer"><div className="modal compact">
