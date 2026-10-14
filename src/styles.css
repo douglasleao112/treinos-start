@@ -148,17 +148,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   margin-top: 5px;
   padding: 9px 11px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 7px;
-  border: 1px dashed #72d8b7;
-  border-radius: 8px;
-  background: #effcf7;
-  color: var(--primary-dark);
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: white;
+  color: #526073;
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
 }
-.exercise-results-floating .create-exercise-option:hover { background: #dff8ef; }
+.exercise-results-floating .create-exercise-option:hover { background: #f3f6f8; }
 .exercise-actions { display: flex; gap: 1px; }
 .exercise-actions button, .video-link { width: 29px; height: 29px; border-radius: 7px; background: transparent; color: white; display: grid; place-items: center; cursor: pointer; }
 .exercise-actions button:hover:not(:disabled), .video-link:hover { background: rgba(255,255,255,.18); color: white; }
