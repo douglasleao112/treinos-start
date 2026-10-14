@@ -396,7 +396,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .exercise-form-grid textarea { min-height: 62px; padding-top: 10px; border-radius: 12px; resize: none; }
 .exercise-form-grid input:focus, .exercise-form-grid select:focus, .exercise-form-grid textarea:focus { border-color: var(--primary); outline: 3px solid var(--primary-soft); }
 .secondary-muscles > span { display: block; color: #586678; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px; }
-.secondary-muscles select { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 12px; padding: 0 11px; color: var(--ink); background: white; }
+.secondary-muscles select { width: 100%; height: 42px; margin-top: 0; border: 1px solid var(--line); border-radius: 12px; padding: 0 11px; color: var(--ink); background: white; }
 .secondary-muscles select + select { margin-top: 8px; }
 .secondary-muscles select:disabled { opacity: .5; cursor: not-allowed; }
 .secondary-muscles > button { margin-top: 7px; padding: 0; color: #96a1ae; background: transparent; font-size: 10px; cursor: pointer; }
