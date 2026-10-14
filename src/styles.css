@@ -415,6 +415,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   justify-content: space-between;
   gap: 8px;
 }
+
+.day-name-field .field-heading {
+  justify-content: flex-start;
+}
+
+.day-name-field .inline-tools {
+  gap: 6px;
+}
 .field-heading label,
 .exercise-picker > label,
 .exercise-meta-grid label {
