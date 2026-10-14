@@ -580,8 +580,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   gap: 10px;
   border: 1px solid var(--line);
   border-radius: 0 0 12px 12px;
-  max-height: min(440px, calc(100vh - 360px));
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
 }
 .exercise-card { border-radius: 12px; }
 .exercise-card.dragging { opacity: .38; transform: scale(.99); }
