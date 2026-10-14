@@ -133,6 +133,8 @@ function App() {
   const [catalogStatus, setCatalogStatus] = useState<'loading' | 'online' | 'fallback'>('loading');
   const [libraryQuery, setLibraryQuery] = useState('');
   const [exerciseQuery, setExerciseQuery] = useState('');
+  const [replacingExerciseIndex, setReplacingExerciseIndex] = useState<number | null>(null);
+  const [replacementExerciseQuery, setReplacementExerciseQuery] = useState('');
   const [expandedExercises, setExpandedExercises] = useState<Record<string, boolean>>({});
   const [expandedSeries, setExpandedSeries] = useState<Record<string, boolean>>({});
   const [repeatWorkoutNote, setRepeatWorkoutNote] = useState(false);
@@ -283,6 +285,22 @@ function App() {
     exercises.splice(index + 1, 0, cloneExercise(exercises[index]));
     return { ...day, exercises };
   });
+
+  const openExerciseReplacement = (index: number, exercise?: Exercise) => {
+    setReplacingExerciseIndex(index);
+    setReplacementExerciseQuery(exercise?.name || '');
+  };
+
+  const closeExerciseReplacement = () => {
+    setReplacingExerciseIndex(null);
+    setReplacementExerciseQuery('');
+  };
+
+  const replaceExercise = (index: number, replacement: Exercise) => {
+    updateExercise(index, (exercise) => ({ ...exercise, exerciseId: replacement.id }));
+    closeExerciseReplacement();
+    setToast({ tone: 'success', text: `Exercício trocado por ${replacement.name}.` });
+  };
 
   const swapWorkoutDays = (fromWeekday: number, toWeekday: number) => {
     if (fromWeekday === toWeekday) return;
@@ -594,6 +612,14 @@ function App() {
     ).slice(0, 12);
   }, [exerciseCatalog, exerciseQuery]);
 
+  const replacementExerciseResults = useMemo(() => {
+    const query = replacementExerciseQuery.trim().toLocaleLowerCase('pt-BR');
+    if (!query) return [];
+    return exerciseCatalog.filter((exercise) =>
+      `${exercise.name} ${exercise.muscleGroup || ''}`.toLocaleLowerCase('pt-BR').includes(query),
+    ).slice(0, 12);
+  }, [exerciseCatalog, replacementExerciseQuery]);
+
   const totalExercises = data.workouts.reduce((total, workout) => total + workoutExerciseCount(workout), 0);
   const filteredExerciseLibrary = exerciseCatalog.filter((exercise) => {
     const query = exerciseLibraryQuery.trim().toLocaleLowerCase('pt-BR');
@@ -774,6 +800,7 @@ function App() {
                     const restSummary = details.every((set) => Number(set.restSeconds) === Number(details[0]?.restSeconds)) ? String(details[0]?.restSeconds ?? item.restSeconds) : '—';
                     const cardClass = [
                       'exercise-card',
+                      replacingExerciseIndex === index ? 'replacing' : '',
                       draggingExerciseIndex === index ? 'dragging' : '',
                       dragOverExerciseIndex === index ? 'drag-over' : '',
                     ].filter(Boolean).join(' ');
@@ -798,7 +825,29 @@ function App() {
                           title="Arrastar para mudar a ordem ou levar para outro dia"
                           aria-label="Arrastar exercício"
                         ><GripVertical size={18} className="grip" /></button>
-                        <div className="exercise-title"><strong>{exercise?.name || `Exercício ${item.exerciseId}`}</strong><small>{exercise?.muscleGroup || 'Exercício do catálogo'}</small></div>
+                        <div className="exercise-title">
+                          {replacingExerciseIndex === index ? <div className="exercise-replace-search" onClick={(event) => event.stopPropagation()}>
+                            <input
+                              autoFocus
+                              value={replacementExerciseQuery}
+                              onChange={(event) => setReplacementExerciseQuery(event.target.value)}
+                              onKeyDown={(event) => { if (event.key === 'Escape') closeExerciseReplacement(); }}
+                              placeholder="Buscar outro exercício..."
+                            />
+                            <div className="exercise-replace-results">
+                              {replacementExerciseResults.length ? replacementExerciseResults.map((replacement) => <button key={replacement.id} type="button" onClick={() => replaceExercise(index, replacement)}>
+                                <strong>{replacement.name}</strong>
+                                <small>{replacement.muscleGroup || 'Sem grupamento'}</small>
+                              </button>) : <span>Nenhum exercício encontrado.</span>}
+                            </div>
+                          </div> : <button
+                            type="button"
+                            className="exercise-name-button"
+                            title="Trocar exercício"
+                            aria-label={`Trocar exercício ${exercise?.name || ''}`}
+                            onClick={(event) => { event.stopPropagation(); openExerciseReplacement(index, exercise); }}
+                          >{exercise?.name || `Exercício ${item.exerciseId}`}</button>}
+                        </div>
                         <div className="exercise-actions">
                           <button className="expand" onClick={(event) => { event.stopPropagation(); setExpandedExercises((current) => ({ ...current, [key]: !expanded })); }} title={expanded ? 'Recolher' : 'Expandir'}>{expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</button>
                           <button onClick={(event) => { event.stopPropagation(); duplicateExercise(index); }} title="Duplicar"><Copy size={16} /></button>
