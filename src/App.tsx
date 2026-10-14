@@ -527,13 +527,15 @@ function App() {
   }, [selectedDay, selectedWorkout?.id]);
 
   const changeSets = (index: number, amount: number) => updateExercise(index, (exercise) => {
-    const sets = Math.max(1, Math.min(20, amount || 1));
-    const current = exercise.setDetails?.length ? exercise.setDetails : Array.from({ length: exercise.sets }, () => ({
+    if (!amount) return { ...exercise, sets: 0, setDetails: [] };
+    const sets = Math.max(1, Math.min(20, amount));
+    const fallbackSet = {
       reps: exercise.reps,
       restSeconds: exercise.restSeconds,
       prescribedLoad: exercise.prescribedLoad || '',
-    }));
-    const setDetails = Array.from({ length: sets }, (_, setIndex) => current[setIndex] || { ...current[current.length - 1] });
+    };
+    const current = exercise.setDetails?.length ? exercise.setDetails : [fallbackSet];
+    const setDetails = Array.from({ length: sets }, (_, setIndex) => current[setIndex] || { ...(current[current.length - 1] || fallbackSet) });
     return { ...exercise, sets, setDetails };
   });
 
@@ -1009,7 +1011,7 @@ function App() {
                       </div>
                       {expanded && <div className="exercise-content">
                         <div className="exercise-meta-grid">
-                          <label>Série<input type="number" min="1" max="20" value={item.sets} onChange={(event) => changeSets(index, Number(event.target.value))} /></label>
+                          <label>Série<input type="number" min="1" max="20" value={item.sets || ''} onChange={(event) => changeSets(index, Number(event.target.value))} onBlur={() => { if (!item.sets) changeSets(index, 1); }} /></label>
                           <label>Reps<input value={repsSummary} onFocus={(event) => { if (event.currentTarget.value === '—') event.currentTarget.select(); }} onChange={(event) => updateExerciseMainField(index, 'reps', event.target.value)} /></label>
                           <label>Carga<input value={loadSummary} onFocus={(event) => { if (event.currentTarget.value === '—') event.currentTarget.select(); }} onChange={(event) => updateExerciseMainField(index, 'prescribedLoad', event.target.value)} /></label>
                           <label>Descanso<input inputMode="numeric" value={restSummary} onFocus={(event) => { if (event.currentTarget.value === '—') event.currentTarget.select(); }} onChange={(event) => updateExerciseMainField(index, 'restSeconds', Number(event.target.value.replace(/\D/g, '')))} /></label>
