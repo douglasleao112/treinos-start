@@ -458,6 +458,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   border-bottom-color: transparent;
   border-radius: 12px 12px 0 0;
   background: #f7fafc;
+  background-clip: padding-box;
   gap: 5px;
   font-size: 10px;
   overflow: hidden;
