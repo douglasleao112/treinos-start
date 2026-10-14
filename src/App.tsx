@@ -623,10 +623,10 @@ function App() {
     }
   };
 
-  const newExercise = (intent: ExerciseDraftIntent = 'library') => {
+  const newExercise = (intent: ExerciseDraftIntent = 'library', initialName = '') => {
     setExerciseDraftIntent(intent);
     setExerciseDraft({
-      id: uid(), name: '', muscleGroup: '', youtubeId: '', youtubeUrl: '', videoOrientation: 'vertical',
+      id: uid(), name: initialName.trim(), muscleGroup: '', youtubeId: '', youtubeUrl: '', videoOrientation: 'vertical',
       defaultRestSeconds: null, note: '', secondaryMuscleGroups: [''], volumePoints: {}, equivalentExerciseIds: [],
       isCustom: true, createdAt: now(),
     });
@@ -1021,7 +1021,7 @@ function App() {
               </div><Plus size={17} />
             </button>) : <span className="floating-empty-result">Nenhum exercício encontrado.</span>}
           </div>
-          <button className="create-exercise-option" onClick={() => { setExerciseQuery(''); newExercise('add-to-day'); }}><Plus size={17} /> Adicionar novo exercício</button>
+          <button className="create-exercise-option" onClick={() => { newExercise('add-to-day', exerciseQuery); setExerciseQuery(''); }}><Plus size={17} /> Adicionar novo exercício</button>
         </div>,
         document.body,
       )}
@@ -1034,7 +1034,7 @@ function App() {
               <small>{replacement.muscleGroup || 'Sem grupamento'}</small>
             </button>) : <span className="floating-empty-result">Nenhum exercício encontrado.</span>}
           </div>
-          <button className="create-exercise-option" onClick={() => { const index = replacingExerciseIndex; closeExerciseReplacement(); newExercise({ type: 'replace', index }); }}><Plus size={17} /> Adicionar novo exercício</button>
+          <button className="create-exercise-option" onClick={() => { const index = replacingExerciseIndex; const initialName = replacementExerciseQuery; closeExerciseReplacement(); newExercise({ type: 'replace', index }, initialName); }}><Plus size={17} /> Adicionar novo exercício</button>
         </div>,
         document.body,
       )}
