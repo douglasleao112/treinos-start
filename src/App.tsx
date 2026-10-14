@@ -12,7 +12,6 @@ import {
   FileUp,
   GripVertical,
   HardDrive,
-  Info,
   MoreVertical,
   Pencil,
   Play,
@@ -228,12 +227,12 @@ function App() {
     loadExerciseCatalog('')
       .then((items) => {
         if (!active) return;
-        setExerciseCatalog([...(items.length ? items : FALLBACK_EXERCISES), ...data.customExercises]);
+        setExerciseCatalog([...data.customExercises, ...(items.length ? items : FALLBACK_EXERCISES)]);
         setCatalogStatus('online');
       })
       .catch(() => {
         if (!active) return;
-        setExerciseCatalog([...FALLBACK_EXERCISES, ...data.customExercises]);
+        setExerciseCatalog([...data.customExercises, ...FALLBACK_EXERCISES]);
         setCatalogStatus('fallback');
       });
     return () => { active = false; };
@@ -821,8 +820,7 @@ function App() {
             <div className="exercise-library-grid">
               {visibleExerciseLibrary.map((exercise) => {
                 const volumeText = exerciseVolumeText(exercise);
-                const equivalentCount = exercise.equivalentExerciseIds?.length || 0;
-                return <article className="exercise-library-card" key={exercise.id}>
+                return <article className={`exercise-library-card${exercise.isCustom ? ' custom' : ''}`} key={exercise.id}>
                   <button className="exercise-library-thumb" onClick={() => exercise.youtubeId && setVideoExercise(exercise)} disabled={!exercise.youtubeId} aria-label={exercise.youtubeId ? `Vídeo de ${exercise.name}` : `Sem vídeo para ${exercise.name}`}>
                     {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <Dumbbell size={20} />}
                     {exercise.youtubeId && <span><i><Play size={13} fill="currentColor" /></i></span>}
@@ -833,17 +831,13 @@ function App() {
                     <em className={exercise.youtubeId ? '' : 'without-video'}>{exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</em>
                     <div className="exercise-library-meta">
                       <span>{volumeText ? `Volume: ${volumeText}` : ''}</span>
-                      <span className={equivalentCount ? 'has-equivalents' : ''} title="Exercícios equivalentes">
-                        {equivalentCount > 0 && <b>{equivalentCount}</b>}
-                        <Info size={14} />
-                      </span>
                     </div>
                     {exercise.isCustom && <b className="custom-exercise-mark">CRIADO NO STUDIO</b>}
                   </div>
-                  <div className="exercise-library-actions">
-                    <button disabled={!exercise.isCustom} onClick={() => { if (!exercise.isCustom) return; setExerciseDraftIntent('library'); setExerciseDraft({ ...exercise }); }} title={exercise.isCustom ? 'Editar' : 'Exercício do banco — somente leitura'}><Pencil size={15} /></button>
-                    <button disabled={!exercise.isCustom} onClick={() => exercise.isCustom && deleteCustomExercise(exercise)} title={exercise.isCustom ? 'Excluir' : 'Exercícios do banco não podem ser excluídos'}><Trash2 size={15} /></button>
-                  </div>
+                  {exercise.isCustom && <div className="exercise-library-actions">
+                    <button onClick={() => { setExerciseDraftIntent('library'); setExerciseDraft({ ...exercise }); }} title="Editar"><Pencil size={15} /></button>
+                    <button onClick={() => deleteCustomExercise(exercise)} title="Excluir"><Trash2 size={15} /></button>
+                  </div>}
                 </article>;
               })}
               {!visibleExerciseLibrary.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum exercício encontrado.</p></div>}
