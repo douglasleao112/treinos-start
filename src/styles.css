@@ -442,8 +442,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   min-height: 46px;
   margin-bottom: -1px;
   border: 1px solid var(--line);
-  border-bottom-color: transparent;
-  border-radius: 12px 12px 0 0;
+  border-bottom-color: var(--line);
+  border-radius: 0;
   background: #f7fafc;
   gap: 5px;
   font-size: 10px;
