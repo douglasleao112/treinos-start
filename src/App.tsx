@@ -769,6 +769,9 @@ function App() {
                     const key = `${selectedWorkout.id}-${selectedDay}-${index}`;
                     const expanded = expandedExercises[key] ?? index === 0;
                     const details = item.setDetails?.length ? item.setDetails : Array.from({ length: item.sets }, () => ({ reps: item.reps, restSeconds: item.restSeconds, prescribedLoad: item.prescribedLoad || '' }));
+                    const repsSummary = details.every((set) => set.reps === details[0]?.reps) ? (details[0]?.reps ?? item.reps) : '—';
+                    const loadSummary = details.every((set) => (set.prescribedLoad || '') === (details[0]?.prescribedLoad || '')) ? (details[0]?.prescribedLoad || '') : '—';
+                    const restSummary = details.every((set) => Number(set.restSeconds) === Number(details[0]?.restSeconds)) ? String(details[0]?.restSeconds ?? item.restSeconds) : '—';
                     const cardClass = [
                       'exercise-card',
                       draggingExerciseIndex === index ? 'dragging' : '',
@@ -805,9 +808,9 @@ function App() {
                       {expanded && <div className="exercise-content">
                         <div className="exercise-meta-grid">
                           <label>Série<input type="number" min="1" max="20" value={item.sets} onChange={(event) => changeSets(index, Number(event.target.value))} /></label>
-                          <label>Reps<input value={item.reps} onChange={(event) => updateExerciseMainField(index, 'reps', event.target.value)} /></label>
-                          <label>Carga<input value={item.prescribedLoad || ''} onChange={(event) => updateExerciseMainField(index, 'prescribedLoad', event.target.value)} /></label>
-                          <label>Descanso<input type="number" min="0" value={item.restSeconds} onChange={(event) => updateExerciseMainField(index, 'restSeconds', Number(event.target.value))} /></label>
+                          <label>Reps<input value={repsSummary} onFocus={(event) => { if (event.currentTarget.value === '—') event.currentTarget.select(); }} onChange={(event) => updateExerciseMainField(index, 'reps', event.target.value)} /></label>
+                          <label>Carga<input value={loadSummary} onFocus={(event) => { if (event.currentTarget.value === '—') event.currentTarget.select(); }} onChange={(event) => updateExerciseMainField(index, 'prescribedLoad', event.target.value)} /></label>
+                          <label>Descanso<input inputMode="numeric" value={restSummary} onFocus={(event) => { if (event.currentTarget.value === '—') event.currentTarget.select(); }} onChange={(event) => updateExerciseMainField(index, 'restSeconds', Number(event.target.value.replace(/\D/g, '')))} /></label>
                           <button className={`series-toggle ${expandedSeries[key] ? 'open' : ''}`} onClick={() => setExpandedSeries((current) => ({ ...current, [key]: !current[key] }))} title={expandedSeries[key] ? 'Recolher séries individuais' : 'Abrir séries individuais'}><ChevronDown size={16} /></button>
                           <label className="exercise-note">Observação<input value={item.note || ''} onChange={(event) => updateExercise(index, (exerciseItem) => ({ ...exerciseItem, note: event.target.value }))} placeholder="Observações sobre o exercício" /></label>
                         </div>
