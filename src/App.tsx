@@ -200,6 +200,7 @@ function App() {
   const importRef = useRef<HTMLInputElement>(null);
   const exerciseSearchInputRef = useRef<HTMLInputElement>(null);
   const replacementSearchInputRef = useRef<HTMLInputElement>(null);
+  const replacementMenuRef = useRef<HTMLDivElement>(null);
   const pointerDragRef = useRef<{
     type: 'day' | 'exercise';
     pointerId: number;
@@ -277,6 +278,19 @@ function App() {
       window.removeEventListener('scroll', updatePosition, true);
     };
   }, [replacingExerciseIndex, replacementExerciseQuery]);
+
+  useEffect(() => {
+    if (replacingExerciseIndex == null) return;
+    const handleOutsidePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (replacementSearchInputRef.current?.contains(target)) return;
+      if (replacementMenuRef.current?.contains(target)) return;
+      setReplacingExerciseIndex(null);
+      setReplacementExerciseQuery('');
+    };
+    document.addEventListener('pointerdown', handleOutsidePointerDown);
+    return () => document.removeEventListener('pointerdown', handleOutsidePointerDown);
+  }, [replacingExerciseIndex]);
 
   useEffect(() => {
     if (!selectedWorkout) return;
@@ -1018,7 +1032,7 @@ function App() {
       )}
 
       {replacingExerciseIndex != null && replacementExerciseQuery.trim() && replacementMenuPosition && createPortal(
-        <div className="exercise-replace-results exercise-results-floating" style={{ left: replacementMenuPosition.left, top: replacementMenuPosition.top, width: replacementMenuPosition.width, maxHeight: replacementMenuPosition.maxHeight }}>
+        <div ref={replacementMenuRef} className="exercise-replace-results exercise-results-floating" style={{ left: replacementMenuPosition.left, top: replacementMenuPosition.top, width: replacementMenuPosition.width, maxHeight: replacementMenuPosition.maxHeight }}>
           <div className="floating-exercise-options">
             {replacementExerciseResults.length ? replacementExerciseResults.map((replacement) => <button key={replacement.id} type="button" onClick={() => replaceExercise(replacingExerciseIndex, replacement)}>
               <strong>{replacement.name}</strong>
