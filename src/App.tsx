@@ -10,6 +10,7 @@ import {
   Dumbbell,
   FileUp,
   GripVertical,
+  Info,
   MoreVertical,
   Pencil,
   Play,
@@ -1118,7 +1119,7 @@ function App() {
         <div className="video-frame"><iframe src={`https://www.youtube-nocookie.com/embed/${videoExercise.youtubeId}?rel=0`} title={`Execução de ${videoExercise.name}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
       </div></div>}
 
-      {toast && <div className={`toast ${toast.tone}`}><span>{toast.tone === 'success' ? <Check size={17} /> : toast.tone === 'error' ? <X size={17} /> : <HardDrive size={17} />}</span>{toast.text}</div>}
+      {toast && <div className={`toast ${toast.tone}`}><span>{toast.tone === 'success' ? <Check size={17} /> : toast.tone === 'error' ? <X size={17} /> : <Info size={17} />}</span>{toast.text}</div>}
     </div>
   );
 }
