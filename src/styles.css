@@ -478,7 +478,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   top: 0;
   left: 0;
   right: 0;
-  height: 5px;
+  height: 4px;
   border-radius: 10px 10px 0 0;
   background: var(--primary);
   pointer-events: none;
