@@ -902,7 +902,7 @@ function App() {
                 })}
               </div>
 
-              {currentDay && <>
+              {currentDay && <div className="day-sheet-content">
                 <div className="day-config-grid">
                   <div className="day-name-field">
                     <div className="field-heading"><label>Nome da sessão</label><span className="inline-tools"><button onClick={() => updateDay((day) => ({ ...day, exercises: [] }))} disabled={!currentDay.exercises.length} title="Excluir todos os exercícios do dia"><Trash2 size={14} /></button><button onClick={copyCurrentDay} disabled={!currentDay.exercises.length} title="Copiar treino do dia"><Copy size={14} /></button>{copiedDay && <button onClick={pasteCurrentDay} title="Colar treino copiado"><Upload size={14} /></button>}</span></div>
@@ -1001,7 +1001,7 @@ function App() {
                   })}
                   {!currentDay.exercises.length && <div className="empty-day"><Dumbbell size={31} /><strong>Nenhum exercício neste dia</strong><p>Use a busca acima para começar a montar a sessão.</p></div>}
                 </div>
-              </>}
+              </div>}
               </div>
               <div className="editor-footer">
                 <button className="button ghost" onClick={() => setEditorOpen(false)}>Cancelar</button>
