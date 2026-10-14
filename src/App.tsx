@@ -825,6 +825,7 @@ function App() {
                   const day = selectedWorkout.days.find((item) => item.weekday === weekday.value);
                   const count = day?.exercises.length || 0;
                   const tabClass = [
+                    count > 0 ? 'has-workout' : '',
                     selectedDay === weekday.value ? 'active' : '',
                     draggingDay === weekday.value ? 'dragging' : '',
                     dragOverDay === weekday.value ? 'drag-over' : '',
