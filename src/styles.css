@@ -482,6 +482,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   gap: 6px;
   align-items: end;
 }
+.exercise-meta-grid > label:not(.exercise-note) { text-align: center; }
+.exercise-meta-grid > label:not(.exercise-note) input { text-align: center; }
 .exercise-meta-grid input {
   height: 30px;
   margin-top: 4px;
