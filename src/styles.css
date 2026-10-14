@@ -477,7 +477,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   background-clip: padding-box;
   gap: 5px;
   font-size: 10px;
-  overflow: hidden;
+  overflow: visible;
   cursor: grab;
   user-select: none;
   touch-action: none;
@@ -500,10 +500,22 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   pointer-events: none;
 }
 .weekday-tabs button.active {
+  z-index: 2;
   color: var(--primary-dark);
   border: 1px solid var(--line);
   border-bottom-color: white;
   background: white;
+}
+.weekday-tabs button.active::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  left: -1px;
+  right: -1px;
+  bottom: -2px;
+  height: 3px;
+  background: white;
+  pointer-events: none;
 }
 .weekday-tabs button.dragging { opacity: .38; transform: scale(.98); }
 .weekday-tabs button.drag-over { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,185,133,.16); }
