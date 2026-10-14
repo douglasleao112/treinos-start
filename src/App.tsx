@@ -12,6 +12,7 @@ import {
   FileUp,
   GripVertical,
   HardDrive,
+  Info,
   MoreVertical,
   Pencil,
   Play,
@@ -106,6 +107,18 @@ const videoUrl = (exercise?: Exercise) => {
 };
 
 const workoutExerciseCount = (workout: Workout) => workout.days.reduce((total, day) => total + day.exercises.length, 0);
+
+const exerciseVolumeText = (exercise: Exercise) => {
+  const entries = Object.entries(exercise.volumePoints || {});
+  const normalizedEntries = entries.length
+    ? entries
+    : exercise.muscleGroup?.trim()
+      ? [[exercise.muscleGroup, 1] as [string, number]]
+      : [];
+  return normalizedEntries
+    .map(([group, points]) => `${group.toLocaleLowerCase('pt-BR')}: ${points}`)
+    .join('  •  ');
+};
 
 const workoutMuscleVolumes = (workout: Workout, exerciseById: Map<string, Exercise>) => {
   const totals = new Map<string, number>();
@@ -792,14 +805,33 @@ function App() {
               {MUSCLE_GROUPS.map((group) => <option key={group} value={group}>{group}</option>)}
             </select>
             <div className="exercise-library-grid">
-              {visibleExerciseLibrary.map((exercise) => <article className="exercise-library-card" key={exercise.id}>
-                <button className="exercise-library-thumb" onClick={() => exercise.youtubeId && setVideoExercise(exercise)} disabled={!exercise.youtubeId} aria-label={exercise.youtubeId ? `Vídeo de ${exercise.name}` : `Sem vídeo para ${exercise.name}`}>
-                  {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <Dumbbell size={24} />}
-                  {exercise.youtubeId && <span><Play size={14} fill="currentColor" /></span>}
-                </button>
-                <div className="exercise-library-info"><strong>{exercise.name}</strong><small>{exercise.muscleGroup || 'Sem grupamento'}</small><em>{exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</em>{exercise.isCustom && <b>CRIADO NO STUDIO</b>}</div>
-                {exercise.isCustom && <div className="exercise-library-actions"><button onClick={() => { setExerciseDraftIntent('library'); setExerciseDraft({ ...exercise }); }} title="Editar"><Pencil size={15} /></button><button onClick={() => deleteCustomExercise(exercise)} title="Excluir"><Trash2 size={15} /></button></div>}
-              </article>)}
+              {visibleExerciseLibrary.map((exercise) => {
+                const volumeText = exerciseVolumeText(exercise);
+                const equivalentCount = exercise.equivalentExerciseIds?.length || 0;
+                return <article className="exercise-library-card" key={exercise.id}>
+                  <button className="exercise-library-thumb" onClick={() => exercise.youtubeId && setVideoExercise(exercise)} disabled={!exercise.youtubeId} aria-label={exercise.youtubeId ? `Vídeo de ${exercise.name}` : `Sem vídeo para ${exercise.name}`}>
+                    {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <Dumbbell size={20} />}
+                    {exercise.youtubeId && <span><i><Play size={13} fill="currentColor" /></i></span>}
+                  </button>
+                  <div className="exercise-library-info">
+                    <strong title={exercise.name}>{exercise.name}</strong>
+                    <small>{exercise.muscleGroup || 'Sem grupamento'}</small>
+                    <em className={exercise.youtubeId ? '' : 'without-video'}>{exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</em>
+                    <div className="exercise-library-meta">
+                      <span>{volumeText ? `Volume: ${volumeText}` : ''}</span>
+                      <span className={equivalentCount ? 'has-equivalents' : ''} title="Exercícios equivalentes">
+                        {equivalentCount > 0 && <b>{equivalentCount}</b>}
+                        <Info size={14} />
+                      </span>
+                    </div>
+                    {exercise.isCustom && <b className="custom-exercise-mark">CRIADO NO STUDIO</b>}
+                  </div>
+                  <div className="exercise-library-actions">
+                    <button disabled={!exercise.isCustom} onClick={() => { if (!exercise.isCustom) return; setExerciseDraftIntent('library'); setExerciseDraft({ ...exercise }); }} title={exercise.isCustom ? 'Editar' : 'Exercício do banco — somente leitura'}><Pencil size={15} /></button>
+                    <button disabled={!exercise.isCustom} onClick={() => exercise.isCustom && deleteCustomExercise(exercise)} title={exercise.isCustom ? 'Excluir' : 'Exercícios do banco não podem ser excluídos'}><Trash2 size={15} /></button>
+                  </div>
+                </article>;
+              })}
               {!visibleExerciseLibrary.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum exercício encontrado.</p></div>}
             </div>
             <div className="exercise-pagination"><span>Mostrando {(exercisePage - 1) * 24 + (visibleExerciseLibrary.length ? 1 : 0)}–{(exercisePage - 1) * 24 + visibleExerciseLibrary.length} de {filteredExerciseLibrary.length}</span><div><button disabled={exercisePage <= 1} onClick={() => setExercisePage((page) => page - 1)}>‹</button><b>{exercisePage} / {exercisePageCount}</b><button disabled={exercisePage >= exercisePageCount} onClick={() => setExercisePage((page) => page + 1)}>›</button></div></div>
