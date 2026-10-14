@@ -524,7 +524,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   cursor: pointer;
 }
 .repeat-days { display: inline-flex; align-items: center; gap: 4px; color: #8793a3; font-size: 8px; font-weight: 600; white-space: nowrap; cursor: pointer; }
-.repeat-days input { width: 11px; height: 11px; margin: 0; accent-color: var(--primary); }
+.day-note-field .repeat-days input {
+  width: 9px;
+  height: 9px;
+  min-width: 9px;
+  flex: 0 0 9px;
+  margin: 0;
+  accent-color: var(--primary);
+}
 .day-name-field input, .day-note-field input {
   width: 100%;
   height: 40px;

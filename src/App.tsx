@@ -120,6 +120,17 @@ type Toast = { tone: 'success' | 'error' | 'info'; text: string } | null;
 type ExerciseDraftIntent = 'library' | 'add-to-day' | { type: 'replace'; index: number };
 type FloatingMenuPosition = { left: number; top: number; width: number; maxHeight: number };
 const MUSCLE_GROUPS = ['Peitoral', 'Costas', 'Deltoide', 'Bíceps', 'Tríceps', 'Quadríceps', 'Posterior de coxa', 'Glúteos', 'Panturrilha', 'Abdômen'];
+const WORKOUT_NOTE_REPEAT_STORAGE_KEY = 'studio_workout_repeat_note_enabled';
+
+const readStoredWorkoutNoteRepeat = () => {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(WORKOUT_NOTE_REPEAT_STORAGE_KEY) === 'true';
+};
+
+const saveStoredWorkoutNoteRepeat = (value: boolean) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(WORKOUT_NOTE_REPEAT_STORAGE_KEY, String(value));
+};
 
 const getFloatingMenuPosition = (input: HTMLInputElement): FloatingMenuPosition => {
   const rect = input.getBoundingClientRect();
@@ -157,7 +168,7 @@ function App() {
   const [replacementMenuPosition, setReplacementMenuPosition] = useState<FloatingMenuPosition | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Record<string, boolean>>({});
   const [expandedSeries, setExpandedSeries] = useState<Record<string, boolean>>({});
-  const [repeatWorkoutNote, setRepeatWorkoutNote] = useState(false);
+  const [repeatWorkoutNote, setRepeatWorkoutNote] = useState(readStoredWorkoutNoteRepeat);
   const [draggingDay, setDraggingDay] = useState<number | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
   const [draggingExerciseIndex, setDraggingExerciseIndex] = useState<number | null>(null);
@@ -554,19 +565,20 @@ function App() {
   };
 
   const updateDayNote = (value: string) => {
-    if (!repeatWorkoutNote) {
-      updateDay((day) => ({ ...day, note: value }));
-      return;
-    }
     updateSelectedWorkout((workout) => ({
       ...workout,
       note: value,
-      days: workout.days.map((day) => ({ ...day, note: value })),
+      days: workout.days.map((day) => (
+        repeatWorkoutNote || day.weekday === selectedDay
+          ? { ...day, note: value }
+          : day
+      )),
     }));
   };
 
   const repeatDayNote = (checked: boolean) => {
     setRepeatWorkoutNote(checked);
+    saveStoredWorkoutNoteRepeat(checked);
     if (!checked || !currentDay) return;
     updateSelectedWorkout((workout) => ({
       ...workout,
@@ -855,7 +867,7 @@ function App() {
                     <input value={currentDay.label} onChange={(event) => updateDay((day) => ({ ...day, label: event.target.value }))} />
                   </div>
                   <div className="day-note-field">
-                    <div className="field-heading"><label>Observação do treino</label><span className="note-tools"><button onClick={() => updateDayNote('')} disabled={!currentDay.note?.trim()}>Limpar</button><label className="repeat-days"><input type="checkbox" checked={repeatWorkoutNote} onChange={(event) => repeatDayNote(event.target.checked)} /> Repetir dias</label></span></div>
+                    <div className="field-heading"><label>Observação do treino</label><span className="note-tools"><button onClick={() => updateDayNote('')}>Limpar</button><label className="repeat-days"><input type="checkbox" checked={repeatWorkoutNote} onChange={(event) => repeatDayNote(event.target.checked)} /> Repetir dias</label></span></div>
                     <input value={currentDay.note || ''} onChange={(event) => updateDayNote(event.target.value)} placeholder="Ex.: Realizar bike, mobilidade..." />
                   </div>
                 </div>
