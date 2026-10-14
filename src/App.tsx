@@ -970,7 +970,7 @@ function App() {
                             title="Trocar exercício"
                             aria-label={`Trocar exercício ${exercise?.name || ''}`}
                             onClick={(event) => { event.stopPropagation(); openExerciseReplacement(index, exercise); }}
-                          >{exercise?.name || `Exercício ${item.exerciseId}`}</button>}
+                          ><span>{exercise?.name || `Exercício ${item.exerciseId}`}</span><Pencil className="exercise-name-pencil" size={11} aria-hidden="true" /></button>}
                         </div>
                         <div className="exercise-actions">
                           <button className="expand" onClick={(event) => { event.stopPropagation(); setExpandedExercises((current) => ({ ...current, [key]: !expanded })); }} title={expanded ? 'Recolher' : 'Expandir'}>{expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</button>
