@@ -613,7 +613,7 @@ function App() {
                         <div className="exercise-meta-grid">
                           <label>Série<input type="number" min="1" max="20" value={item.sets} onChange={(event) => changeSets(index, Number(event.target.value))} /></label>
                           <label>Reps<input value={item.reps} onChange={(event) => updateExerciseMainField(index, 'reps', event.target.value)} /></label>
-                          <label>Peso<input value={item.prescribedLoad || ''} onChange={(event) => updateExerciseMainField(index, 'prescribedLoad', event.target.value)} /></label>
+                          <label>Carga<input value={item.prescribedLoad || ''} onChange={(event) => updateExerciseMainField(index, 'prescribedLoad', event.target.value)} /></label>
                           <label>Descanso<input type="number" min="0" value={item.restSeconds} onChange={(event) => updateExerciseMainField(index, 'restSeconds', Number(event.target.value))} /></label>
                           <button className={`series-toggle ${expandedSeries[key] ? 'open' : ''}`} onClick={() => setExpandedSeries((current) => ({ ...current, [key]: !current[key] }))} title={expandedSeries[key] ? 'Recolher séries individuais' : 'Abrir séries individuais'}><ChevronDown size={16} /></button>
                           <label className="exercise-note">Observação<input value={item.note || ''} onChange={(event) => updateExercise(index, (exerciseItem) => ({ ...exerciseItem, note: event.target.value }))} placeholder="Observações sobre o exercício" /></label>
@@ -622,7 +622,7 @@ function App() {
                           {details.map((set, setIndex) => <div className="set-row" key={setIndex}>
                             <label><span className={setIndex ? 'sr-label' : ''}>Série</span><b>{setIndex + 1}º</b></label>
                             <label><span>Reps</span><input value={set.reps} onChange={(event) => updateSet(index, setIndex, 'reps', event.target.value)} /></label>
-                            <label><span>Peso</span><input value={set.prescribedLoad || ''} onChange={(event) => updateSet(index, setIndex, 'prescribedLoad', event.target.value)} /></label>
+                            <label><span>Carga</span><input value={set.prescribedLoad || ''} onChange={(event) => updateSet(index, setIndex, 'prescribedLoad', event.target.value)} /></label>
                             <label><span>Descanso</span><input type="number" min="0" value={set.restSeconds} onChange={(event) => updateSet(index, setIndex, 'restSeconds', Number(event.target.value))} /></label>
                           </div>)}
                         </div>{exercise?.youtubeId && <button className="series-video" onClick={() => setVideoExercise(exercise)} title="Assistir ao vídeo"><img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt={`Vídeo de ${exercise.name}`} /><span><Play size={14} fill="currentColor" /></span></button>}</div>}
