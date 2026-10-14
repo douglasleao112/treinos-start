@@ -387,7 +387,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   background: #f7fafc;
   gap: 5px;
   font-size: 10px;
+  cursor: grab;
+  user-select: none;
 }
+.weekday-tabs button:active { cursor: grabbing; }
 .weekday-tabs button::before { content: '⋮'; color: #c7d0da; font-size: 13px; line-height: 1; }
 .weekday-tabs button b { display: none; }
 .weekday-tabs button.active {
@@ -397,6 +400,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   border-bottom-color: white;
   background: white;
 }
+.weekday-tabs button.dragging { opacity: .38; transform: scale(.98); }
+.weekday-tabs button.drag-over { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,185,133,.16); }
 .day-config-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -471,7 +476,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   overflow: auto;
 }
 .exercise-card { border-radius: 12px; }
+.exercise-card.dragging { opacity: .38; transform: scale(.99); }
+.exercise-card.drag-over { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,185,133,.14); }
 .exercise-card-header { min-height: 52px; padding: 7px 9px; cursor: pointer; }
+.exercise-drag-handle { width: 24px; height: 36px; margin: 0 -4px 0 -3px; padding: 0; display: grid; place-items: center; border-radius: 7px; color: white; background: transparent; cursor: grab; touch-action: none; }
+.exercise-drag-handle:hover { background: rgba(0,0,0,.1); }
+.exercise-drag-handle:active { cursor: grabbing; }
 .exercise-title strong { font-size: 12px; }
 .video-preview { width: 38px; height: 38px; }
 .exercise-actions button { width: 27px; height: 27px; }

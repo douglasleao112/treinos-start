@@ -136,6 +136,10 @@ function App() {
   const [expandedExercises, setExpandedExercises] = useState<Record<string, boolean>>({});
   const [expandedSeries, setExpandedSeries] = useState<Record<string, boolean>>({});
   const [repeatWorkoutNote, setRepeatWorkoutNote] = useState(false);
+  const [draggingDay, setDraggingDay] = useState<number | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+  const [draggingExerciseIndex, setDraggingExerciseIndex] = useState<number | null>(null);
+  const [dragOverExerciseIndex, setDragOverExerciseIndex] = useState<number | null>(null);
   const [copiedDay, setCopiedDay] = useState<WorkoutDay | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -147,6 +151,18 @@ function App() {
   const [exercisePage, setExercisePage] = useState(1);
   const [exerciseDraft, setExerciseDraft] = useState<Exercise | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const pointerDragRef = useRef<{
+    type: 'day' | 'exercise';
+    pointerId: number;
+    startX: number;
+    startY: number;
+    active: boolean;
+    sourceWeekday: number;
+    sourceIndex?: number;
+    targetWeekday: number;
+    targetIndex?: number;
+  } | null>(null);
+  const suppressPointerClickRef = useRef(false);
 
   const selectedWorkout = data.workouts.find((item) => item.id === data.selectedWorkoutId) || null;
   const currentDay = selectedWorkout?.days.find((day) => day.weekday === selectedDay) || null;
@@ -267,6 +283,140 @@ function App() {
     exercises.splice(index + 1, 0, cloneExercise(exercises[index]));
     return { ...day, exercises };
   });
+
+  const swapWorkoutDays = (fromWeekday: number, toWeekday: number) => {
+    if (fromWeekday === toWeekday) return;
+    updateSelectedWorkout((workout) => {
+      const sourceDay = workout.days.find((day) => day.weekday === fromWeekday);
+      const targetDay = workout.days.find((day) => day.weekday === toWeekday);
+      if (!sourceDay || !targetDay) return workout;
+      return {
+        ...workout,
+        days: workout.days.map((day) => {
+          if (day.weekday === fromWeekday) return { ...day, note: targetDay.note || '', exercises: targetDay.exercises.map(cloneExercise) };
+          if (day.weekday === toWeekday) return { ...day, note: sourceDay.note || '', exercises: sourceDay.exercises.map(cloneExercise) };
+          return day;
+        }),
+      };
+    });
+    setSelectedDay(toWeekday);
+    setExpandedExercises({});
+    setExpandedSeries({});
+  };
+
+  const moveExercise = (fromWeekday: number, fromIndex: number, toWeekday: number, toIndex?: number) => {
+    updateSelectedWorkout((workout) => {
+      if (fromWeekday === toWeekday) {
+        return {
+          ...workout,
+          days: workout.days.map((day) => {
+            if (day.weekday !== fromWeekday) return day;
+            const exercises = [...day.exercises];
+            const [moved] = exercises.splice(fromIndex, 1);
+            if (!moved) return day;
+            exercises.splice(Math.max(0, Math.min(toIndex ?? exercises.length, exercises.length)), 0, moved);
+            return { ...day, exercises };
+          }),
+        };
+      }
+
+      let movedExercise: WorkoutExercise | null = null;
+      const withoutSource = workout.days.map((day) => {
+        if (day.weekday !== fromWeekday) return day;
+        const exercises = [...day.exercises];
+        const [moved] = exercises.splice(fromIndex, 1);
+        movedExercise = moved ? cloneExercise(moved) : null;
+        return moved ? { ...day, exercises } : day;
+      });
+      if (!movedExercise) return workout;
+      return {
+        ...workout,
+        days: withoutSource.map((day) => {
+          if (day.weekday !== toWeekday) return day;
+          const exercises = [...day.exercises];
+          exercises.splice(Math.max(0, Math.min(toIndex ?? exercises.length, exercises.length)), 0, movedExercise as WorkoutExercise);
+          return { ...day, exercises };
+        }),
+      };
+    });
+    setSelectedDay(toWeekday);
+    setExpandedExercises({});
+    setExpandedSeries({});
+  };
+
+  const finishDragging = () => {
+    setDraggingDay(null);
+    setDragOverDay(null);
+    setDraggingExerciseIndex(null);
+    setDragOverExerciseIndex(null);
+  };
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const drag = pointerDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      if (!drag.active && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 6) return;
+
+      drag.active = true;
+      event.preventDefault();
+      const target = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
+      const dayTab = target?.closest('[data-workout-day-tab]') as HTMLElement | null;
+
+      if (drag.type === 'day') {
+        setDraggingDay(drag.sourceWeekday);
+        const targetWeekday = Number(dayTab?.dataset.workoutDayTab);
+        if (Number.isFinite(targetWeekday)) {
+          drag.targetWeekday = targetWeekday;
+          setDragOverDay(targetWeekday);
+        }
+        return;
+      }
+
+      setDraggingExerciseIndex(drag.sourceIndex || 0);
+      if (dayTab) {
+        const targetWeekday = Number(dayTab.dataset.workoutDayTab);
+        if (Number.isFinite(targetWeekday)) {
+          drag.targetWeekday = targetWeekday;
+          drag.targetIndex = undefined;
+          setDragOverDay(targetWeekday);
+          setDragOverExerciseIndex(null);
+        }
+        return;
+      }
+
+      const card = target?.closest('[data-workout-exercise-index]') as HTMLElement | null;
+      const targetIndex = Number(card?.dataset.workoutExerciseIndex);
+      if (Number.isFinite(targetIndex)) {
+        drag.targetWeekday = drag.sourceWeekday;
+        drag.targetIndex = targetIndex;
+        setDragOverDay(null);
+        setDragOverExerciseIndex(targetIndex);
+      }
+    };
+
+    const handlePointerEnd = (event: PointerEvent) => {
+      const drag = pointerDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      pointerDragRef.current = null;
+      if (drag.active) {
+        event.preventDefault();
+        suppressPointerClickRef.current = true;
+        if (drag.type === 'day') swapWorkoutDays(drag.sourceWeekday, drag.targetWeekday);
+        else moveExercise(drag.sourceWeekday, drag.sourceIndex || 0, drag.targetWeekday, drag.targetIndex);
+        window.setTimeout(() => { suppressPointerClickRef.current = false; }, 0);
+      }
+      finishDragging();
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: false });
+    window.addEventListener('pointerup', handlePointerEnd, true);
+    window.addEventListener('pointercancel', handlePointerEnd, true);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerEnd, true);
+      window.removeEventListener('pointercancel', handlePointerEnd, true);
+    };
+  }, [selectedDay, selectedWorkout?.id]);
 
   const changeSets = (index: number, amount: number) => updateExercise(index, (exercise) => {
     const sets = Math.max(1, Math.min(20, amount || 1));
@@ -562,7 +712,27 @@ function App() {
                 {WEEKDAYS.map((weekday) => {
                   const day = selectedWorkout.days.find((item) => item.weekday === weekday.value);
                   const count = day?.exercises.length || 0;
-                  return <button key={weekday.value} className={selectedDay === weekday.value ? 'active' : ''} onClick={() => setSelectedDay(weekday.value)}>
+                  const tabClass = [
+                    selectedDay === weekday.value ? 'active' : '',
+                    draggingDay === weekday.value ? 'dragging' : '',
+                    dragOverDay === weekday.value ? 'drag-over' : '',
+                  ].filter(Boolean).join(' ');
+                  return <button
+                    key={weekday.value}
+                    className={tabClass}
+                    data-workout-day-tab={weekday.value}
+                    onClick={() => {
+                      if (!suppressPointerClickRef.current) setSelectedDay(weekday.value);
+                    }}
+                    onPointerDown={(event) => {
+                      if (event.pointerType === 'mouse' && event.button !== 0) return;
+                      pointerDragRef.current = {
+                        type: 'day', pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
+                        active: false, sourceWeekday: weekday.value, targetWeekday: weekday.value,
+                      };
+                    }}
+                    title="Arraste para trocar o treino entre os dias"
+                  >
                     <span>{weekday.short}</span><b>{count}</b>
                   </button>;
                 })}
@@ -599,9 +769,32 @@ function App() {
                     const key = `${selectedWorkout.id}-${selectedDay}-${index}`;
                     const expanded = expandedExercises[key] ?? index === 0;
                     const details = item.setDetails?.length ? item.setDetails : Array.from({ length: item.sets }, () => ({ reps: item.reps, restSeconds: item.restSeconds, prescribedLoad: item.prescribedLoad || '' }));
-                    return <article className="exercise-card" key={`${item.exerciseId}-${index}`}>
+                    const cardClass = [
+                      'exercise-card',
+                      draggingExerciseIndex === index ? 'dragging' : '',
+                      dragOverExerciseIndex === index ? 'drag-over' : '',
+                    ].filter(Boolean).join(' ');
+                    return <article
+                      className={cardClass}
+                      key={`${item.exerciseId}-${index}`}
+                      data-workout-exercise-index={index}
+                    >
                       <div className="exercise-card-header" onClick={() => setExpandedExercises((current) => ({ ...current, [key]: !expanded }))}>
-                        <GripVertical size={18} className="grip" />
+                        <button
+                          type="button"
+                          className="exercise-drag-handle"
+                          onClick={(event) => event.stopPropagation()}
+                          onPointerDown={(event) => {
+                            if (event.pointerType === 'mouse' && event.button !== 0) return;
+                            event.stopPropagation();
+                            pointerDragRef.current = {
+                              type: 'exercise', pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
+                              active: false, sourceWeekday: selectedDay, sourceIndex: index, targetWeekday: selectedDay, targetIndex: index,
+                            };
+                          }}
+                          title="Arrastar para mudar a ordem ou levar para outro dia"
+                          aria-label="Arrastar exercício"
+                        ><GripVertical size={18} className="grip" /></button>
                         <div className="exercise-title"><strong>{exercise?.name || `Exercício ${item.exerciseId}`}</strong><small>{exercise?.muscleGroup || 'Exercício do catálogo'}</small></div>
                         <div className="exercise-actions">
                           <button className="expand" onClick={(event) => { event.stopPropagation(); setExpandedExercises((current) => ({ ...current, [key]: !expanded })); }} title={expanded ? 'Recolher' : 'Expandir'}>{expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</button>
