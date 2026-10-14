@@ -432,6 +432,21 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   font-weight: 700;
   background: transparent;
 }
+.editor-name-control {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  cursor: text;
+}
+.editor-name-control input {
+  min-width: 0;
+  max-width: calc(100% - 20px);
+}
+.editor-name-pencil {
+  flex: 0 0 auto;
+  color: #8793a3;
+}
 .day-sheet {
   margin: 18px 16px 16px;
 }

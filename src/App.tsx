@@ -845,7 +845,15 @@ function App() {
               <div className="editor-heading">
                 <div className="name-field">
                   <span>Nome do treino</span>
-                  <input value={selectedWorkout.name} onChange={(event) => updateSelectedWorkout((workout) => ({ ...workout, name: event.target.value }))} />
+                  <label className="editor-name-control" title="Clique no nome para editar">
+                    <input
+                      aria-label="Nome do treino"
+                      style={{ width: `${Math.min(Math.max(selectedWorkout.name.length + 1, 12), 48)}ch` }}
+                      value={selectedWorkout.name}
+                      onChange={(event) => updateSelectedWorkout((workout) => ({ ...workout, name: event.target.value }))}
+                    />
+                    <Pencil className="editor-name-pencil" size={13} aria-hidden="true" />
+                  </label>
                 </div>
                 <div className="catalog-indicator" data-status={catalogStatus}>
                   <span /> {catalogStatus === 'loading' ? 'Carregando exercícios' : catalogStatus === 'online' ? `${exerciseCatalog.length} exercícios do STARTFIT` : 'Catálogo básico offline'}
