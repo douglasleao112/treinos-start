@@ -128,6 +128,7 @@ const extractYoutubeId = (value: string) => {
 
 function App() {
   const [data, setData] = useState<StudioData>(() => loadStudioData());
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [selectedDay, setSelectedDay] = useState(1);
   const [exerciseCatalog, setExerciseCatalog] = useState<Exercise[]>(FALLBACK_EXERCISES);
   const [catalogStatus, setCatalogStatus] = useState<'loading' | 'online' | 'fallback'>('loading');
@@ -152,6 +153,7 @@ function App() {
 
   useEffect(() => {
     saveStudioData(data);
+    setSavedAt(new Date());
   }, [data]);
 
   useEffect(() => {
@@ -427,6 +429,12 @@ function App() {
         <div className="brand" aria-label="STARTFIT">
           <img src="/startfit-logo.png" alt="STARTFIT" />
           <b>Studio de Treinos</b>
+        </div>
+        <div className="save-status" aria-live="polite">
+          <span className="status-dot" aria-hidden="true" />
+          {savedAt
+            ? `Salvo localmente às ${savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+            : 'Salvando localmente...'}
         </div>
         <div className="header-actions">
           <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Importar SQL</button>

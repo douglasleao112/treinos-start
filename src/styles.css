@@ -31,6 +31,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .brand { display: flex; align-items: center; min-width: 260px; }
 .brand img { display: block; width: 86px; height: 35px; object-fit: contain; }
 .brand b { letter-spacing: 0; font-size: 12px; color: #566478; border-left: 1px solid var(--line); margin-left: 15px; padding-left: 15px; }
+.save-status { display: flex; align-items: center; gap: 7px; color: #627184; font-size: 12px; white-space: nowrap; }
+.status-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
 .header-actions { display: flex; gap: 8px; margin-left: auto; }
 
 .button { min-height: 40px; border-radius: 10px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: .18s ease; white-space: nowrap; }
@@ -156,7 +158,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 @media (max-width: 900px) {
   .topbar { padding: 0 14px; height: 62px; }
   .brand { min-width: 0; flex: 1; }
-  .brand b, .header-actions .ghost { display: none; }
+  .brand b, .save-status, .header-actions .ghost { display: none; }
   .workspace { display: block; min-height: calc(100vh - 62px); }
   .library { display: none; position: fixed; inset: 62px 0 0; z-index: 35; border: 0; }
   .library.mobile-open { display: flex; }
