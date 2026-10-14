@@ -2,18 +2,18 @@
 
 Ambiente independente para um colaborador montar treinos-modelo sem acessar o painel administrativo do STARTFIT.
 
-O editor reproduz o fluxo do painel administrativo e inclui um snapshot dos 205 exercícios cadastrados no STARTFIT, com seus grupamentos e vídeos. O catálogo fica disponível mesmo sem login no aplicativo.
+O editor reproduz o fluxo do painel administrativo e inclui um snapshot dos 205 exercícios cadastrados no STARTFIT, com seus grupamentos e vídeos. O catálogo fica disponível mesmo sem login no aplicativo. Na aba **Exercícios**, também é possível cadastrar exercícios próprios com vídeo, grupamento, descanso e orientação técnica.
 
 ## O que fica salvo
 
-Os treinos são salvos automaticamente no `localStorage` do navegador. Para evitar perda de trabalho, use **Backup** periodicamente e guarde o arquivo JSON.
+Os treinos e exercícios personalizados são salvos automaticamente no `localStorage` do navegador. Para evitar perda de trabalho, use **Backup** periodicamente e guarde o arquivo JSON.
 
 ## Exportação final
 
 1. Clique em **Exportar SQL**.
 2. Confira a quantidade de treinos e baixe o arquivo `.sql`.
 3. No Supabase, abra **SQL Editor**, cole o arquivo inteiro e execute.
-4. O script adiciona os novos treinos e substitui somente os que tenham o mesmo ID. Os demais dados do painel são preservados.
+4. O script cadastra ou atualiza primeiro os exercícios personalizados e depois adiciona os novos treinos. Treinos com o mesmo ID são substituídos; os demais dados do painel são preservados.
 
 ## Desenvolvimento local
 

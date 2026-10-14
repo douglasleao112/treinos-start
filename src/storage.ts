@@ -1,10 +1,11 @@
-import type { StudioData, Workout } from './types';
+import type { StudioData } from './types';
 
 export const STORAGE_KEY = 'startfit-workout-studio-v1';
 
 export const emptyStudioData = (): StudioData => ({
   version: 1,
   workouts: [],
+  customExercises: [],
   selectedWorkoutId: null,
   updatedAt: new Date().toISOString(),
 });
@@ -15,7 +16,7 @@ export function loadStudioData(): StudioData {
     if (!raw) return emptyStudioData();
     const value = JSON.parse(raw);
     if (value?.version !== 1 || !Array.isArray(value?.workouts)) return emptyStudioData();
-    return value;
+    return { ...value, customExercises: Array.isArray(value.customExercises) ? value.customExercises : [] };
   } catch {
     return emptyStudioData();
   }
@@ -35,10 +36,10 @@ export function downloadText(filename: string, content: string, type = 'text/pla
   URL.revokeObjectURL(url);
 }
 
-export function exportBackup(workouts: Workout[]) {
+export function exportBackup(data: StudioData) {
   downloadText(
     `startfit-treinos-backup-${new Date().toISOString().slice(0, 10)}.json`,
-    JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), workouts }, null, 2),
+    JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 2),
     'application/json;charset=utf-8',
   );
 }

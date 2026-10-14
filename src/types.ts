@@ -7,6 +7,8 @@ export type Exercise = {
   videoOrientation?: 'auto' | 'vertical' | 'horizontal';
   defaultRestSeconds?: number | null;
   note?: string;
+  isCustom?: boolean;
+  createdAt?: string;
 };
 
 export type WorkoutSet = {
@@ -51,6 +53,7 @@ export type Workout = {
 export type StudioData = {
   version: 1;
   workouts: Workout[];
+  customExercises: Exercise[];
   selectedWorkoutId: string | null;
   updatedAt: string;
 };

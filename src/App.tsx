@@ -121,6 +121,14 @@ const workoutMuscleVolumes = (workout: Workout, exerciseById: Map<string, Exerci
 };
 
 type Toast = { tone: 'success' | 'error' | 'info'; text: string } | null;
+const MUSCLE_GROUPS = ['Peitoral', 'Costas', 'Deltoide', 'Bíceps', 'Tríceps', 'Quadríceps', 'Posterior de coxa', 'Glúteos', 'Panturrilha', 'Abdômen'];
+
+const extractYoutubeId = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const match = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{6,})/i);
+  return match?.[1] || trimmed;
+};
 
 function App() {
   const [data, setData] = useState<StudioData>(() => loadStudioData());
@@ -136,6 +144,11 @@ function App() {
   const [showSqlPreview, setShowSqlPreview] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
+  const [activePage, setActivePage] = useState<'workouts' | 'exercises'>('workouts');
+  const [exerciseLibraryQuery, setExerciseLibraryQuery] = useState('');
+  const [exerciseGroup, setExerciseGroup] = useState('');
+  const [exercisePage, setExercisePage] = useState(1);
+  const [exerciseDraft, setExerciseDraft] = useState<Exercise | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -153,16 +166,16 @@ function App() {
     loadExerciseCatalog('')
       .then((items) => {
         if (!active) return;
-        setExerciseCatalog(items.length ? items : FALLBACK_EXERCISES);
+        setExerciseCatalog([...(items.length ? items : FALLBACK_EXERCISES), ...data.customExercises]);
         setCatalogStatus('online');
       })
       .catch(() => {
         if (!active) return;
-        setExerciseCatalog(FALLBACK_EXERCISES);
+        setExerciseCatalog([...FALLBACK_EXERCISES, ...data.customExercises]);
         setCatalogStatus('fallback');
       });
     return () => { active = false; };
-  }, []);
+  }, [data.customExercises]);
 
   useEffect(() => {
     if (!toast) return;
@@ -328,14 +341,65 @@ function App() {
       const workouts = Array.isArray(parsed) ? parsed : parsed?.workouts;
       if (!Array.isArray(workouts)) throw new Error('Arquivo sem lista de treinos.');
       const valid = workouts.filter((workout: any) => workout?.id && workout?.name && Array.isArray(workout?.days));
-      if (!valid.length) throw new Error('Nenhum treino válido encontrado.');
-      setData({ version: 1, workouts: valid, selectedWorkoutId: valid[0].id, updatedAt: now() });
-      setToast({ tone: 'success', text: `${valid.length} treino(s) restaurado(s).` });
+      const customExercises = Array.isArray(parsed?.customExercises)
+        ? parsed.customExercises.filter((exercise: any) => exercise?.id && exercise?.name)
+        : [];
+      if (!valid.length && !customExercises.length) throw new Error('Nenhum treino ou exercício válido encontrado.');
+      setData({ version: 1, workouts: valid, customExercises, selectedWorkoutId: valid[0]?.id ?? null, updatedAt: now() });
+      setToast({ tone: 'success', text: `${valid.length} treino(s) e ${customExercises.length} exercício(s) restaurado(s).` });
     } catch (error: any) {
       setToast({ tone: 'error', text: error?.message || 'Não foi possível importar o backup.' });
     } finally {
       if (importRef.current) importRef.current.value = '';
     }
+  };
+
+  const newExercise = () => setExerciseDraft({
+    id: uid(), name: '', muscleGroup: '', youtubeId: '', youtubeUrl: '', videoOrientation: 'auto',
+    defaultRestSeconds: 60, note: '', isCustom: true, createdAt: now(),
+  });
+
+  const saveExercise = () => {
+    if (!exerciseDraft?.name.trim()) {
+      setToast({ tone: 'error', text: 'Informe o nome do exercício.' });
+      return;
+    }
+    const normalizedName = exerciseDraft.name.trim().toLocaleLowerCase('pt-BR');
+    const duplicate = exerciseCatalog.some((exercise) =>
+      exercise.id !== exerciseDraft.id &&
+      exercise.name.trim().toLocaleLowerCase('pt-BR') === normalizedName
+    );
+    if (duplicate) {
+      setToast({ tone: 'error', text: 'Já existe um exercício com esse nome.' });
+      return;
+    }
+    const normalized = {
+      ...exerciseDraft,
+      name: exerciseDraft.name.trim(),
+      youtubeId: extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''),
+      youtubeUrl: exerciseDraft.youtubeUrl?.trim() || '',
+      isCustom: true,
+    };
+    setData((current) => ({
+      ...current,
+      customExercises: current.customExercises.some((item) => item.id === normalized.id)
+        ? current.customExercises.map((item) => item.id === normalized.id ? normalized : item)
+        : [normalized, ...current.customExercises],
+    }));
+    setExerciseDraft(null);
+    setToast({ tone: 'success', text: 'Exercício salvo neste navegador.' });
+  };
+
+  const deleteCustomExercise = (exercise: Exercise) => {
+    const isUsed = data.workouts.some((workout) =>
+      workout.days.some((day) => day.exercises.some((item) => item.exerciseId === exercise.id))
+    );
+    if (isUsed) {
+      setToast({ tone: 'error', text: 'Remova este exercício dos treinos antes de excluí-lo.' });
+      return;
+    }
+    setData((current) => ({ ...current, customExercises: current.customExercises.filter((item) => item.id !== exercise.id) }));
+    setToast({ tone: 'info', text: 'Exercício personalizado excluído.' });
   };
 
   const filteredWorkouts = data.workouts.filter((workout) =>
@@ -351,6 +415,13 @@ function App() {
   }, [exerciseCatalog, exerciseQuery]);
 
   const totalExercises = data.workouts.reduce((total, workout) => total + workoutExerciseCount(workout), 0);
+  const filteredExerciseLibrary = exerciseCatalog.filter((exercise) => {
+    const query = exerciseLibraryQuery.trim().toLocaleLowerCase('pt-BR');
+    return (!exerciseGroup || exercise.muscleGroup === exerciseGroup)
+      && (!query || `${exercise.name} ${exercise.muscleGroup || ''}`.toLocaleLowerCase('pt-BR').includes(query));
+  });
+  const exercisePageCount = Math.max(1, Math.ceil(filteredExerciseLibrary.length / 24));
+  const visibleExerciseLibrary = filteredExerciseLibrary.slice((exercisePage - 1) * 24, exercisePage * 24);
 
   return (
     <div className="app-shell">
@@ -361,15 +432,20 @@ function App() {
         </div>
         <div className="save-status"><span className="status-dot" /> Salvo localmente {savedAt ? `às ${savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}</div>
         <div className="header-actions">
-          <button className="button ghost" onClick={() => exportBackup(data.workouts)} disabled={!data.workouts.length}><FileJson size={16} /> Backup</button>
+          <button className="button ghost" onClick={() => exportBackup(data)} disabled={!data.workouts.length && !data.customExercises.length}><FileJson size={16} /> Backup</button>
           <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Restaurar</button>
-          <button className="button primary" onClick={() => setShowSqlPreview(true)} disabled={!data.workouts.length}><Database size={16} /> Exportar SQL</button>
+          <button className="button primary" onClick={() => setShowSqlPreview(true)} disabled={!data.workouts.length && !data.customExercises.length}><Database size={16} /> Exportar SQL</button>
           <input ref={importRef} type="file" accept="application/json,.json" hidden onChange={(event) => event.target.files?.[0] && void handleImport(event.target.files[0])} />
         </div>
       </header>
 
       <main className="workspace">
         <aside className="library">
+          <nav className="studio-tabs" aria-label="Seções do Studio">
+            <button className={activePage === 'workouts' ? 'active' : ''} onClick={() => setActivePage('workouts')}><Dumbbell size={16} /> Treinos</button>
+            <button className={activePage === 'exercises' ? 'active' : ''} onClick={() => setActivePage('exercises')}><Video size={16} /> Exercícios</button>
+          </nav>
+          {activePage === 'workouts' ? <>
           <div className="library-header">
             <div>
               <p className="eyebrow">BIBLIOTECA LOCAL</p>
@@ -412,6 +488,28 @@ function App() {
             {!filteredWorkouts.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum treino encontrado.</p></div>}
           </div>
           <div className="local-note"><HardDrive size={16} /><span>Os dados permanecem somente neste navegador até você exportar.</span></div>
+          </> : <>
+            <div className="library-header exercise-library-header"><div><h1>Exercícios</h1><small>{exerciseCatalog.length} exercícios cadastrados · {data.customExercises.length} criado(s) aqui</small></div></div>
+            <button className="button primary full" onClick={newExercise}><Plus size={18} /> Novo exercício</button>
+            <label className="search-field exercise-library-search"><Search size={17} /><input value={exerciseLibraryQuery} onChange={(event) => { setExerciseLibraryQuery(event.target.value); setExercisePage(1); }} placeholder="Buscar exercício ou grupo muscular..." /></label>
+            <select className="group-filter" value={exerciseGroup} onChange={(event) => { setExerciseGroup(event.target.value); setExercisePage(1); }} aria-label="Filtrar exercícios">
+              <option value="">Todos os grupamentos</option>
+              {MUSCLE_GROUPS.map((group) => <option key={group} value={group}>{group}</option>)}
+            </select>
+            <div className="exercise-library-grid">
+              {visibleExerciseLibrary.map((exercise) => <article className="exercise-library-card" key={exercise.id}>
+                <button className="exercise-library-thumb" onClick={() => exercise.youtubeId && setVideoExercise(exercise)} disabled={!exercise.youtubeId} aria-label={exercise.youtubeId ? `Vídeo de ${exercise.name}` : `Sem vídeo para ${exercise.name}`}>
+                  {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <Dumbbell size={24} />}
+                  {exercise.youtubeId && <span><Play size={14} fill="currentColor" /></span>}
+                </button>
+                <div className="exercise-library-info"><strong>{exercise.name}</strong><small>{exercise.muscleGroup || 'Sem grupamento'}</small><em>{exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</em>{exercise.isCustom && <b>CRIADO NO STUDIO</b>}</div>
+                {exercise.isCustom && <div className="exercise-library-actions"><button onClick={() => setExerciseDraft({ ...exercise })} title="Editar"><Pencil size={15} /></button><button onClick={() => deleteCustomExercise(exercise)} title="Excluir"><Trash2 size={15} /></button></div>}
+              </article>)}
+              {!visibleExerciseLibrary.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum exercício encontrado.</p></div>}
+            </div>
+            <div className="exercise-pagination"><span>Mostrando {(exercisePage - 1) * 24 + (visibleExerciseLibrary.length ? 1 : 0)}–{(exercisePage - 1) * 24 + visibleExerciseLibrary.length} de {filteredExerciseLibrary.length}</span><div><button disabled={exercisePage <= 1} onClick={() => setExercisePage((page) => page - 1)}>‹</button><b>{exercisePage} / {exercisePageCount}</b><button disabled={exercisePage >= exercisePageCount} onClick={() => setExercisePage((page) => page + 1)}>›</button></div></div>
+            <div className="local-note"><HardDrive size={16} /><span>Exercícios criados aqui ficam no navegador e serão incluídos no backup e no SQL.</span></div>
+          </>}
         </aside>
 
         <section className="editor-area">
@@ -520,6 +618,21 @@ function App() {
         </section>
       </main>
 
+      {exerciseDraft && <div className="modal-layer"><div className="modal exercise-form-modal">
+        <button className="modal-close" onClick={() => setExerciseDraft(null)} aria-label="Fechar cadastro"><X size={20} /></button>
+        <div className="modal-title-row"><div className="modal-icon"><Dumbbell size={24} /></div><div><p className="eyebrow">BIBLIOTECA LOCAL</p><h2>{data.customExercises.some((item) => item.id === exerciseDraft.id) ? 'Editar exercício' : 'Novo exercício'}</h2></div></div>
+        <div className="exercise-form-grid">
+          <label className="wide">Nome do exercício<input value={exerciseDraft.name} onChange={(event) => setExerciseDraft({ ...exerciseDraft, name: event.target.value })} placeholder="Ex.: Supino reto com barra" /></label>
+          <label>Grupamento<select value={exerciseDraft.muscleGroup || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, muscleGroup: event.target.value })}><option value="">Selecione...</option>{MUSCLE_GROUPS.map((group) => <option key={group}>{group}</option>)}</select></label>
+          <label>Descanso padrão (s)<input type="number" min="0" value={exerciseDraft.defaultRestSeconds ?? 60} onChange={(event) => setExerciseDraft({ ...exerciseDraft, defaultRestSeconds: Number(event.target.value) })} /></label>
+          <label className="wide">Link ou ID do vídeo do YouTube<input value={exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, youtubeUrl: event.target.value, youtubeId: extractYoutubeId(event.target.value) })} placeholder="https://www.youtube.com/shorts/..." /></label>
+          <label>Orientação do vídeo<select value={exerciseDraft.videoOrientation || 'auto'} onChange={(event) => setExerciseDraft({ ...exerciseDraft, videoOrientation: event.target.value as Exercise['videoOrientation'] })}><option value="auto">Automática</option><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select></label>
+          <label className="wide">Observação<textarea value={exerciseDraft.note || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, note: event.target.value })} placeholder="Dica de execução ou orientação técnica..." /></label>
+        </div>
+        {extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || '') && <div className="exercise-video-preview"><img src={`https://img.youtube.com/vi/${extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || '')}/mqdefault.jpg`} alt="Prévia do vídeo" /><div><strong>Vídeo identificado</strong><span>{extractYoutubeId(exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || '')}</span></div></div>}
+        <div className="modal-actions"><button className="button ghost" onClick={() => setExerciseDraft(null)}>Cancelar</button><button className="button primary" onClick={saveExercise}><Check size={16} /> Salvar exercício</button></div>
+      </div></div>}
+
       {confirmDeleteId && <div className="modal-layer"><div className="modal compact">
         <button className="modal-close" onClick={() => setConfirmDeleteId(null)}><X size={20} /></button>
         <div className="modal-icon danger-bg"><Trash2 size={25} /></div>
@@ -530,7 +643,7 @@ function App() {
       {showSqlPreview && <div className="modal-layer"><div className="modal sql-modal">
         <button className="modal-close" onClick={() => setShowSqlPreview(false)}><X size={20} /></button>
         <div className="modal-title-row"><div className="modal-icon"><Database size={25} /></div><div><p className="eyebrow">EXPORTAÇÃO FINAL</p><h2>Arquivo SQL para o Supabase</h2></div></div>
-        <div className="export-summary"><div><b>{data.workouts.length}</b><span>treino(s)</span></div><div><b>{totalExercises}</b><span>exercícios prescritos</span></div><div><b>Seguro</b><span>preserva dados existentes</span></div></div>
+        <div className="export-summary"><div><b>{data.workouts.length}</b><span>treino(s)</span></div><div><b>{data.customExercises.length}</b><span>novo(s) exercício(s)</span></div><div><b>Seguro</b><span>preserva dados existentes</span></div></div>
         <div className="info-box"><Check size={18} /><p>O SQL atualiza somente a biblioteca de treinos do painel, substituindo treinos com o mesmo ID e mantendo todos os outros. Ele também atualiza a revisão do banco para o aplicativo reconhecer a importação.</p></div>
         <textarea className="sql-preview" readOnly value={buildSupabaseSql(data.workouts, exerciseCatalog)} />
         <div className="modal-actions"><button className="button ghost" onClick={() => setShowSqlPreview(false)}>Voltar</button><button className="button primary" onClick={() => { exportSupabaseSql(data.workouts, exerciseCatalog); setToast({ tone: 'success', text: 'Arquivo SQL exportado.' }); }}><Download size={17} /> Baixar arquivo SQL</button></div>

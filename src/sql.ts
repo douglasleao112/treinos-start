@@ -29,10 +29,12 @@ export function buildSupabaseSql(workouts: Workout[], catalog: Exercise[]): stri
       .map((exercise) => [exercise.id, exercise.name]),
   );
   const exerciseNamesJson = JSON.stringify(exerciseNames);
+  const customExercisesJson = JSON.stringify(catalog.filter((exercise) => exercise.isCustom));
   const tag = pickDollarTag(json);
   const namesTag = pickDollarTag(exerciseNamesJson);
+  const customTag = pickDollarTag(customExercisesJson);
 
-  return `-- STARTFIT — importação de treinos-modelo
+  return `-- STARTFIT — importação de exercícios e treinos-modelo
 -- Gerado em ${new Date().toISOString()}
 -- Revise o arquivo e execute inteiro no SQL Editor do Supabase.
 -- O script preserva os demais dados do painel e pode ser executado novamente.
@@ -43,6 +45,7 @@ do $$
 declare
   v_new_workouts jsonb := ${tag}${json}${tag}::jsonb;
   v_exercise_names jsonb := ${namesTag}${exerciseNamesJson}${namesTag}::jsonb;
+  v_custom_exercises jsonb := ${customTag}${customExercisesJson}${customTag}::jsonb;
   v_settings jsonb;
   v_merged_workouts jsonb;
   v_resolved_workouts jsonb := '[]'::jsonb;
@@ -51,12 +54,40 @@ declare
   v_workout jsonb;
   v_day jsonb;
   v_exercise jsonb;
+  v_exercise_definition jsonb;
   v_exercise_name text;
   v_resolved_exercise_id text;
 begin
   if jsonb_typeof(v_new_workouts) <> 'array' then
     raise exception 'Pacote de treinos inválido.';
   end if;
+
+  -- Cria ou atualiza primeiro os exercícios cadastrados pelo colaborador.
+  for v_exercise_definition in select value from jsonb_array_elements(v_custom_exercises)
+  loop
+    update public.public_exercise_items
+       set muscle_group = nullif(v_exercise_definition ->> 'muscleGroup', ''),
+           youtube_id = nullif(v_exercise_definition ->> 'youtubeId', ''),
+           youtube_url = nullif(v_exercise_definition ->> 'youtubeUrl', ''),
+           video_orientation = coalesce(nullif(v_exercise_definition ->> 'videoOrientation', ''), 'auto'),
+           default_rest_seconds = coalesce((v_exercise_definition ->> 'defaultRestSeconds')::integer, 60),
+           note = coalesce(v_exercise_definition ->> 'note', '')
+     where lower(trim(name)) = lower(trim(v_exercise_definition ->> 'name'));
+
+    if not found then
+      insert into public.public_exercise_items (
+        name, muscle_group, youtube_id, youtube_url, video_orientation, default_rest_seconds, note
+      ) values (
+        trim(v_exercise_definition ->> 'name'),
+        nullif(v_exercise_definition ->> 'muscleGroup', ''),
+        nullif(v_exercise_definition ->> 'youtubeId', ''),
+        nullif(v_exercise_definition ->> 'youtubeUrl', ''),
+        coalesce(nullif(v_exercise_definition ->> 'videoOrientation', ''), 'auto'),
+        coalesce((v_exercise_definition ->> 'defaultRestSeconds')::integer, 60),
+        coalesce(v_exercise_definition ->> 'note', '')
+      );
+    end if;
+  end loop;
 
   -- Converte os identificadores locais do Studio nos IDs reais do catálogo.
   -- A busca é feita pelo nome exato, ignorando maiúsculas e espaços externos.
