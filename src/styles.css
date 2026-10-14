@@ -339,3 +339,161 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   .exercise-form-grid { grid-template-columns: 1fr; }
   .exercise-form-grid label.wide { grid-column: auto; }
 }
+
+/* Editor compacto no mesmo padrão do construtor de treinos do painel */
+.editor-card {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 30px);
+  border-radius: 18px;
+}
+.editor-heading {
+  min-height: 64px;
+  padding: 16px 54px 13px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.name-field { max-width: none; }
+.name-field span, .catalog-indicator { display: none; }
+.name-field input {
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+  background: transparent;
+}
+.weekday-tabs {
+  margin: 18px 16px 0;
+  padding: 0 8px;
+  gap: 8px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  overflow: visible;
+}
+.weekday-tabs button {
+  min-width: 0;
+  min-height: 46px;
+  margin-bottom: -1px;
+  border: 1px solid var(--line);
+  border-bottom-color: transparent;
+  border-radius: 12px 12px 0 0;
+  background: #f7fafc;
+  gap: 5px;
+  font-size: 10px;
+}
+.weekday-tabs button::before { content: '⋮'; color: #c7d0da; font-size: 13px; line-height: 1; }
+.weekday-tabs button b { display: none; }
+.weekday-tabs button.active {
+  color: var(--primary-dark);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--primary);
+  border-bottom-color: white;
+  background: white;
+}
+.day-config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px 30px 12px;
+}
+.field-heading {
+  min-height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.field-heading label,
+.exercise-picker > label,
+.exercise-meta-grid label {
+  color: #536174;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .035em;
+}
+.inline-tools, .note-tools { display: inline-flex; align-items: center; gap: 3px; }
+.inline-tools button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: #8b98a8;
+  background: transparent;
+  cursor: pointer;
+}
+.inline-tools button:disabled, .note-tools button:disabled { opacity: .35; cursor: default; }
+.note-tools button {
+  padding: 2px 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8793a3;
+  background: transparent;
+  font-size: 8px;
+  cursor: pointer;
+}
+.check-square { width: 10px; height: 10px; border: 1px solid #9aa6b3; border-radius: 2px; }
+.day-name-field input, .day-note-field input {
+  width: 100%;
+  height: 40px;
+  margin-top: 5px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: #fbfcfd;
+}
+.day-name-field input:focus, .day-note-field input:focus {
+  border-color: var(--primary);
+  outline: 3px solid var(--primary-soft);
+}
+.exercise-picker { padding: 0 30px 14px; }
+.exercise-search { height: 40px; margin-top: 5px; background: #fbfcfd; }
+.exercise-results { top: 62px; left: 30px; right: 30px; }
+.exercise-list {
+  margin: 0 16px 16px;
+  padding: 13px;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 0 0 12px 12px;
+  max-height: min(440px, calc(100vh - 360px));
+  overflow: auto;
+}
+.exercise-card { border-radius: 12px; }
+.exercise-card-header { min-height: 52px; padding: 7px 9px; }
+.exercise-title strong { font-size: 12px; }
+.video-preview { width: 38px; height: 38px; }
+.exercise-actions button { width: 27px; height: 27px; }
+.exercise-content { padding: 11px; }
+.exercise-meta-grid {
+  display: grid;
+  grid-template-columns: 62px 72px 70px 78px minmax(135px, 1fr);
+  gap: 7px;
+  align-items: end;
+}
+.exercise-meta-grid input {
+  height: 30px;
+  margin-top: 4px;
+  border-radius: 15px;
+  padding: 0 9px;
+  font-size: 10px;
+  background: #fbfcfd;
+}
+.exercise-note { margin: 0; }
+.sets-table { display: none; }
+.empty-day { padding: 34px 18px; }
+.editor-footer { padding: 13px 16px; }
+
+@media (max-width: 720px) {
+  .editor-area { padding: 10px; }
+  .editor-card { width: 100%; max-height: calc(100vh - 20px); min-height: 0; border-radius: 16px; }
+  .weekday-tabs { overflow-x: auto; grid-template-columns: repeat(7, 72px); }
+  .day-config-grid { grid-template-columns: 1fr; padding: 14px 16px 12px; }
+  .exercise-picker { padding: 0 16px 14px; }
+  .exercise-results { left: 16px; right: 16px; }
+  .exercise-list { margin: 0 10px 12px; max-height: none; }
+  .exercise-meta-grid { grid-template-columns: 58px 1fr 1fr 72px; }
+  .exercise-meta-grid .exercise-note { grid-column: 1 / -1; }
+}
