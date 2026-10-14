@@ -657,7 +657,7 @@ function App() {
             })}
             {(exerciseDraft.secondaryMuscleGroups?.length || 0) < 2 && <button type="button" onClick={() => setExerciseDraft({ ...exerciseDraft, secondaryMuscleGroups: [...(exerciseDraft.secondaryMuscleGroups || ['']), ''].slice(0, 2) })}>Deseja adicionar outro?</button>}
           </div>
-          <label className="wide">Link ou ID do vídeo do YouTube<input value={exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''} onChange={(event) => { const value = event.target.value.trim(); setExerciseDraft({ ...exerciseDraft, youtubeUrl: value, youtubeId: extractYoutubeId(value) }); }} placeholder="Ex.: https://www.youtube.com/shorts/UHa9U-O09_U" /></label>
+          <label className="wide">Link ou ID do vídeo do YouTube (vertical)<input value={exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''} onChange={(event) => { const value = event.target.value.trim(); setExerciseDraft({ ...exerciseDraft, youtubeUrl: value, youtubeId: extractYoutubeId(value) }); }} placeholder="Ex.: https://www.youtube.com/shorts/UHa9U-O09_U" /></label>
           <label className="wide">Observação (opcional)<textarea rows={2} value={exerciseDraft.note || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, note: event.target.value })} placeholder="Dica de execução..." /></label>
         </div></div>
         <div className="modal-actions exercise-form-actions"><button className="button ghost" onClick={() => setExerciseDraft(null)}>Cancelar</button><button className="button primary" onClick={saveExercise}>Salvar</button></div>
