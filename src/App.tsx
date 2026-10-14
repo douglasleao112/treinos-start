@@ -848,7 +848,6 @@ function App() {
                   <label className="editor-name-control" title="Clique no nome para editar">
                     <input
                       aria-label="Nome do treino"
-                      style={{ width: `${Math.min(Math.max(selectedWorkout.name.length + 1, 12), 48)}ch` }}
                       value={selectedWorkout.name}
                       onChange={(event) => updateSelectedWorkout((workout) => ({ ...workout, name: event.target.value }))}
                     />
