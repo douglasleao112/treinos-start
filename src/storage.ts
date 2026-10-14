@@ -1,7 +1,6 @@
 import type { Exercise, StudioData, Workout } from './types';
 
 export const STORAGE_KEY = 'startfit-workout-studio-v1';
-const BACKUP_FORMAT = 'startfit-studio-backup';
 
 export const emptyStudioData = (): StudioData => ({
   version: 1,
@@ -53,41 +52,6 @@ export function loadStudioData(): StudioData {
 
 export function saveStudioData(data: StudioData) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, updatedAt: new Date().toISOString() }));
-}
-
-export function buildStudioBackup(data: StudioData): string {
-  return JSON.stringify({
-    format: BACKUP_FORMAT,
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    data,
-  }, null, 2);
-}
-
-export function exportStudioBackup(data: StudioData) {
-  const timestamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-  downloadText(
-    `startfit-studio-backup-${timestamp}.json`,
-    buildStudioBackup(data),
-    'application/json;charset=utf-8',
-  );
-}
-
-export function importStudioBackup(content: string): StudioData {
-  const backup = JSON.parse(content);
-  const restored = backup?.format === BACKUP_FORMAT ? backup.data : backup;
-  if (restored?.version !== 1 || !Array.isArray(restored.workouts) || !Array.isArray(restored.customExercises)) {
-    throw new Error('Backup do Studio inválido ou incompleto.');
-  }
-  const selectedWorkoutId = restored.workouts.some((workout: Workout) => workout.id === restored.selectedWorkoutId)
-    ? restored.selectedWorkoutId
-    : restored.workouts[0]?.id ?? null;
-  return {
-    ...restored,
-    selectedWorkoutId,
-    exerciseNotesMigrated: true,
-    updatedAt: new Date().toISOString(),
-  } as StudioData;
 }
 
 export function downloadText(filename: string, content: string, type = 'text/plain;charset=utf-8') {
