@@ -18,6 +18,7 @@ import {
   HardDrive,
   MoreVertical,
   Pencil,
+  Play,
   Plus,
   Search,
   Trash2,
@@ -31,13 +32,13 @@ import { emptyStudioData, exportBackup, loadStudioData, saveStudioData } from '.
 import { buildSupabaseSql, exportSupabaseSql } from './sql';
 
 const WEEKDAYS = [
+  { value: 0, short: 'DOM', label: 'Domingo' },
   { value: 1, short: 'SEG', label: 'Segunda' },
   { value: 2, short: 'TER', label: 'Terça' },
   { value: 3, short: 'QUA', label: 'Quarta' },
   { value: 4, short: 'QUI', label: 'Quinta' },
   { value: 5, short: 'SEX', label: 'Sexta' },
   { value: 6, short: 'SÁB', label: 'Sábado' },
-  { value: 0, short: 'DOM', label: 'Domingo' },
 ];
 
 const uid = () => crypto.randomUUID?.() || `local_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -110,6 +111,15 @@ const videoUrl = (exercise?: Exercise) => {
 
 const workoutExerciseCount = (workout: Workout) => workout.days.reduce((total, day) => total + day.exercises.length, 0);
 
+const workoutMuscleVolumes = (workout: Workout, exerciseById: Map<string, Exercise>) => {
+  const totals = new Map<string, number>();
+  workout.days.forEach((day) => day.exercises.forEach((item) => {
+    const group = exerciseById.get(item.exerciseId)?.muscleGroup?.trim();
+    if (group) totals.set(group, (totals.get(group) || 0) + Number(item.sets || 0));
+  }));
+  return [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2);
+};
+
 type Toast = { tone: 'success' | 'error' | 'info'; text: string } | null;
 
 function App() {
@@ -124,7 +134,8 @@ function App() {
   const [toast, setToast] = useState<Toast>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showSqlPreview, setShowSqlPreview] = useState(false);
-  const [showMobileLibrary, setShowMobileLibrary] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -197,18 +208,19 @@ function App() {
     const workout = createWorkout(`Treino ${data.workouts.length + 1}`);
     setData((current) => ({ ...current, workouts: [workout, ...current.workouts], selectedWorkoutId: workout.id }));
     setSelectedDay(1);
-    setShowMobileLibrary(false);
+    setEditorOpen(true);
     setToast({ tone: 'success', text: 'Novo treino criado e salvo neste navegador.' });
   };
 
   const selectWorkout = (id: string) => {
     setData((current) => ({ ...current, selectedWorkoutId: id }));
-    setShowMobileLibrary(false);
+    setEditorOpen(true);
   };
 
   const duplicateWorkout = (workout: Workout) => {
     const copy = cloneWorkout(workout);
     setData((current) => ({ ...current, workouts: [copy, ...current.workouts], selectedWorkoutId: copy.id }));
+    setEditorOpen(true);
     setToast({ tone: 'success', text: 'Treino duplicado.' });
   };
 
@@ -222,6 +234,7 @@ function App() {
       };
     });
     setConfirmDeleteId(null);
+    if (data.selectedWorkoutId === id) setEditorOpen(false);
     setToast({ tone: 'info', text: 'Treino excluído do armazenamento local.' });
   };
 
@@ -356,13 +369,12 @@ function App() {
       </header>
 
       <main className="workspace">
-        <aside className={`library ${showMobileLibrary ? 'mobile-open' : ''}`}>
+        <aside className="library">
           <div className="library-header">
             <div>
               <p className="eyebrow">BIBLIOTECA LOCAL</p>
               <h1>Treinos</h1>
             </div>
-            <button className="icon-button mobile-only" onClick={() => setShowMobileLibrary(false)} aria-label="Fechar biblioteca"><X size={20} /></button>
           </div>
           <button className="button primary full" onClick={addWorkout}><Plus size={18} /> Novo treino</button>
           <label className="search-field">
@@ -374,34 +386,38 @@ function App() {
             <span>{totalExercises} exercícios</span>
           </div>
           <div className="workout-list">
-            {filteredWorkouts.map((workout) => (
-              <article key={workout.id} className={`workout-list-card ${selectedWorkout?.id === workout.id ? 'selected' : ''}`} onClick={() => selectWorkout(workout.id)}>
+            {filteredWorkouts.map((workout) => {
+              const volumes = workoutMuscleVolumes(workout, exerciseById);
+              return <article key={workout.id} className="workout-list-card" onClick={() => selectWorkout(workout.id)}>
                 <div className="workout-card-main">
                   <Dumbbell size={17} />
                   <div><strong>{workout.name}</strong><small>{workoutExerciseCount(workout)} exercício(s) · {workout.activeWeekdays.length} dia(s)</small></div>
                 </div>
                 <div className="workout-card-actions">
+                  <button onClick={(event) => { event.stopPropagation(); selectWorkout(workout.id); }} title="Editar"><Pencil size={15} /></button>
                   <button onClick={(event) => { event.stopPropagation(); duplicateWorkout(workout); }} title="Duplicar"><Copy size={15} /></button>
                   <button className="danger" onClick={(event) => { event.stopPropagation(); setConfirmDeleteId(workout.id); }} title="Excluir"><Trash2 size={15} /></button>
                 </div>
-              </article>
-            ))}
+                <div className="workout-volume-badges">
+                  {volumes.map(([group, sets]) => <span key={group}>{group} · {sets} séries</span>)}
+                </div>
+                <div className="workout-day-chips">
+                  {WEEKDAYS.filter((weekday) => workout.days.find((day) => day.weekday === weekday.value)?.exercises.length).map((weekday) => {
+                    const count = workout.days.find((day) => day.weekday === weekday.value)?.exercises.length || 0;
+                    return <span key={weekday.value}>{weekday.short.slice(0, 1) + weekday.short.slice(1).toLowerCase()} #{count}</span>;
+                  })}
+                </div>
+              </article>;
+            })}
             {!filteredWorkouts.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum treino encontrado.</p></div>}
           </div>
           <div className="local-note"><HardDrive size={16} /><span>Os dados permanecem somente neste navegador até você exportar.</span></div>
         </aside>
 
         <section className="editor-area">
-          <button className="button ghost mobile-library-button" onClick={() => setShowMobileLibrary(true)}><ArrowLeft size={16} /> Ver treinos</button>
-          {!selectedWorkout ? (
-            <div className="welcome-card">
-              <div className="welcome-icon"><Dumbbell size={34} /></div>
-              <h2>Comece a montar a biblioteca</h2>
-              <p>Crie o primeiro treino. Tudo será salvo automaticamente neste navegador.</p>
-              <button className="button primary" onClick={addWorkout}><Plus size={18} /> Criar primeiro treino</button>
-            </div>
-          ) : (
+          {editorOpen && selectedWorkout && (
             <div className="editor-card">
+              <button className="editor-close" onClick={() => setEditorOpen(false)} aria-label="Fechar editor"><X size={20} /></button>
               <div className="editor-heading">
                 <div className="name-field">
                   <span>Nome do treino</span>
@@ -442,7 +458,10 @@ function App() {
                   <div className="exercise-search"><Search size={18} /><input value={exerciseQuery} onChange={(event) => setExerciseQuery(event.target.value)} placeholder="Digite para buscar um exercício..." /></div>
                   {exerciseResults.length > 0 && <div className="exercise-results">
                     {exerciseResults.map((exercise) => <button key={exercise.id} onClick={() => addExercise(exercise)}>
-                      <div><strong>{exercise.name}</strong><small>{exercise.muscleGroup || 'Sem grupamento'}</small></div><Plus size={17} />
+                      <div className="exercise-result-main">
+                        {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <span className="no-video"><Dumbbell size={16} /></span>}
+                        <div><strong>{exercise.name}</strong><small>{exercise.muscleGroup || 'Sem grupamento'} · {exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</small></div>
+                      </div><Plus size={17} />
                     </button>)}
                   </div>}
                 </div>
@@ -457,7 +476,10 @@ function App() {
                       <div className="exercise-card-header">
                         <GripVertical size={18} className="grip" />
                         <div className="exercise-title"><strong>{exercise?.name || `Exercício ${item.exerciseId}`}</strong><small>{exercise?.muscleGroup || 'Exercício do catálogo'}</small></div>
-                        {videoUrl(exercise) && <a className="video-link" href={videoUrl(exercise)} target="_blank" rel="noreferrer" title="Abrir vídeo"><Video size={17} /></a>}
+                        {exercise?.youtubeId && <button className="video-preview" onClick={() => setVideoExercise(exercise)} title="Assistir ao vídeo">
+                          <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt={`Vídeo de ${exercise.name}`} />
+                          <span><Play size={14} fill="currentColor" /></span>
+                        </button>}
                         <div className="exercise-actions">
                           <button onClick={() => moveExercise(index, -1)} disabled={index === 0} title="Mover para cima"><ArrowUp size={16} /></button>
                           <button onClick={() => moveExercise(index, 1)} disabled={index === currentDay.exercises.length - 1} title="Mover para baixo"><ArrowDown size={16} /></button>
@@ -489,6 +511,10 @@ function App() {
                   {!currentDay.exercises.length && <div className="empty-day"><Dumbbell size={31} /><strong>Nenhum exercício neste dia</strong><p>Use a busca acima para começar a montar a sessão.</p></div>}
                 </div>
               </>}
+              <div className="editor-footer">
+                <button className="button ghost" onClick={() => setEditorOpen(false)}>Cancelar</button>
+                <button className="button primary" onClick={() => { setEditorOpen(false); setToast({ tone: 'success', text: 'Treino salvo neste navegador.' }); }}><Check size={16} /> Salvar treino</button>
+              </div>
             </div>
           )}
         </section>
@@ -508,6 +534,13 @@ function App() {
         <div className="info-box"><Check size={18} /><p>O SQL atualiza somente a biblioteca de treinos do painel, substituindo treinos com o mesmo ID e mantendo todos os outros. Ele também atualiza a revisão do banco para o aplicativo reconhecer a importação.</p></div>
         <textarea className="sql-preview" readOnly value={buildSupabaseSql(data.workouts, exerciseCatalog)} />
         <div className="modal-actions"><button className="button ghost" onClick={() => setShowSqlPreview(false)}>Voltar</button><button className="button primary" onClick={() => { exportSupabaseSql(data.workouts, exerciseCatalog); setToast({ tone: 'success', text: 'Arquivo SQL exportado.' }); }}><Download size={17} /> Baixar arquivo SQL</button></div>
+      </div></div>}
+
+      {videoExercise?.youtubeId && <div className="modal-layer video-layer"><div className="modal video-modal">
+        <button className="modal-close" onClick={() => setVideoExercise(null)} aria-label="Fechar vídeo"><X size={20} /></button>
+        <div className="video-modal-heading"><div><p className="eyebrow">VÍDEO DO EXERCÍCIO</p><h2>{videoExercise.name}</h2></div><span>{videoExercise.muscleGroup || 'Exercício'}</span></div>
+        <div className="video-frame"><iframe src={`https://www.youtube-nocookie.com/embed/${videoExercise.youtubeId}?rel=0`} title={`Execução de ${videoExercise.name}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
+        <div className="modal-actions"><a className="button ghost" href={videoUrl(videoExercise)} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Abrir no YouTube</a><button className="button primary" onClick={() => setVideoExercise(null)}>Fechar</button></div>
       </div></div>}
 
       {toast && <div className={`toast ${toast.tone}`}><span>{toast.tone === 'success' ? <Check size={17} /> : toast.tone === 'error' ? <X size={17} /> : <HardDrive size={17} />}</span>{toast.text}</div>}

@@ -208,9 +208,30 @@ const catalogRows: Array<[string, string]> = [
   ['Tríceps testa polia baixa', 'Tríceps'],
 ];
 
+const youtubeIds = `
+P8k32RAPLyI uAe1Uj3Y05k nabhYLtz8Gg 7MBj2pE4mCI LRzp-_Ng49s RUUg-4TlZZ0 fR_s6S4mfVI ywYRG1oBKWU uAe1Uj3Y05k vHKNq4-HGOM MlzuZq3yC8I rltJymhFtHg
+cGgGIklEJa4 j4WcueuCAvU 5xrcCXZUQMU ccLGfT51WHw nvVa-WFGwmM OwWCkwdATnE 1oipoiTpbJA DfsgqBqZ9vo Jo1DFefVdrg 9AwiDv9Em2c 1o-L0ONHpqs lRCROSJkTKM
+w1URM1Fv4gc oPC_QP2SS0I 0KQOdTvfc5A vq0QXIlyLr8 nabhYLtz8Gg YRw32M0yjIk CblCvLRAPB8 1aATfJITaIw PzIfB9MiiX8 OjlRBt6itcc T46yKiz8laY T46yKiz8laY
+EyIEevt50-8 XqQlpJhB8xU 55nyV_aosNk Od9914tc8sg MENdoLpyj7c MENdoLpyj7c hV21YJFt6MI qyW8hCaCxsw hV21YJFt6MI VxGLc_ZL_04 MHogGITTTBo wUT3hmnzq3c
+VxGLc_ZL_04 MENdoLpyj7c NzefUogE_Bs O3nHTDcdJDo xHsnuP6r4fg 5I7ogOjvdnc uh0oZorifmM hejuwn4kffM m_hNRHDyC30 J5dg36K_TbA qqQa8TKu-oM GqZRmCow0rw
+cCMl5hAgFvA ot9nwSC1JnA dgpts8LHOLc ot9nwSC1JnA -vzaGAaUDjg dgpts8LHOLc cOvGedlKlD4 b3SOY5ljRsM cOvGedlKlD4 Nuoo1XgRtGY FLjF6fLgp8Q fMTwe00HYWg
+IeOqdw9WI90 qqECekG4jMo DfsWjEThmLY TfzlcE4293c 9HQ6_NFBu8U uH_h1B5kDu0 4vv3wemFcds oYAyYEMEoss eHMY9RtYsLM iHmv--ag6Qw 6Ez5m41UnPo A555PryCZ3g
+KscJhVGv4uo u9uiXtjNyxk 5Ix3fjf4w9o - NY5fw4Zaofg qlT4S0wqlic hMu1NUZ6rx0 ZPsUi8zwCQ8 OE6ulD2F-dc DjsLHZ4jxTU ZPsUi8zwCQ8 m6IIorkQe8E
+IXg1PQ_5gmw IXg1PQ_5gmw NykPOcQj6bA o1CyKLbUPAM cTGdHPcWQKk 6XXSRucJWSE 9fIw0ue8iQE qvmH-TpRLBE S6AfYUDDjyk OXULEncEEao ToaKyLuaNbc Imq9GvF1hJQ
+rOrr4kSwQpE uxPlAbWFUDs Lgr9JqdRp3M Lct5tCaiEI8 GDhW19yQrJI QfRGh-o2M90 vKCQHaG0Rj0 vKCQHaG0Rj0 2tO6szRdfKQ xSSle0N-364 S7-LkuIPFZo yp14vDyCUJA
+b5RkrNs_EGM ySLFHxmJ_Sc aQ5mUYB2BkY toAA0omAh2s emPow6X_a_E VcFExIFuBvM r4EmE8I74BQ GcQI46Aay0A 6NBBrNhX3kA GL_Q3BldDoQ e53vSzibkO0 w7j9nPqxTH4
+r6fkfU_wnVI r4EmE8I74BQ r4EmE8I74BQ Uj-EZXWbQHU GcQI46Aay0A eIfAc4BimJI 7lc8Ow4vIwA L2FuijYFTvE TGjm2GZ_i8s xXp3mV3OOZo ymOxKh5zgAQ N1niow42B5I
+c0vYYI_mbXU vwtvfudwkGE fjS0CqDR4v8 mcUpjlWlGZY x6JCKfdzPJE -2IqzqP3j1Q EdsGRhdAye0 0rRpv6o140o 2nv_TyYP7L0 LlYXxlaq324 a1NPJFmCJ5o x6JCKfdzPJE
+QkNciumGy14 90_d-DsrOkE 90_d-DsrOkE B9nwdAWNzCw zuwI9yflt0U T0rvzrvilKk T0rvzrvilKk raMtPJQ5f9A qootC16Tc6w SRVkwwXk7I4 ObD_basPhek vDXe2eBowUg
+v79c-eDjBv8 JByJ3hwyRVE GVzWnp8C7TE 9scS-yd8vFQ XSiWdufUFQ8 GVUPkE_D7s0 ZaNyRjpoki8 KK5ZSj22h7s KK5ZSj22h7s r39cVRTjFU8 UHa9U-O09_U f87mU1s1LKw
+hlV6f0kHmeo HNaDJTSrI8s lttZ3Qk9bPE vGqxqSs37_g Q07t33qOow0 hg6jySXCaT0 IkB040VfrVI 7Gdbq0aq3SA GC1Jvlocm4M Qi_UZceOylw Cd0-tP9utgM etTuALjH3bo
+_laUZhzeLNc dMYGgTbtRIQ _dtPoiFWZT4 x3sgFGDyTiQ M88Bt4MMpkI -QGC1cL6ETE 8ZJ2EfAr1Eo pf-8s8jC_10 1sUU9zqs3LA 40Cx-IfJhA0 40Cx-IfJhA0 PfK51UcnHW0 PfK51UcnHW0
+`.trim().split(/\s+/);
+
 export const STARTFIT_EXERCISES: Exercise[] = catalogRows.map(([name, muscleGroup], index) => ({
   id: `startfit-catalog-${String(index + 1).padStart(3, '0')}`,
   name,
   muscleGroup,
+  youtubeId: youtubeIds[index] === '-' ? undefined : youtubeIds[index],
   defaultRestSeconds: 60,
 }));

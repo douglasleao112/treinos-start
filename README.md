@@ -2,6 +2,8 @@
 
 Ambiente independente para um colaborador montar treinos-modelo sem acessar o painel administrativo do STARTFIT.
 
+O editor reproduz o fluxo do painel administrativo e inclui um snapshot dos 205 exercícios cadastrados no STARTFIT, com seus grupamentos e vídeos. O catálogo fica disponível mesmo sem login no aplicativo.
+
 ## O que fica salvo
 
 Os treinos são salvos automaticamente no `localStorage` do navegador. Para evitar perda de trabalho, use **Backup** periodicamente e guarde o arquivo JSON.

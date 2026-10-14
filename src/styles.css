@@ -201,3 +201,102 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   .exercise-content { padding: 11px; }
   .exercise-meta-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* Biblioteca e editor alinhados ao fluxo do painel administrativo */
+.workspace { display: block; min-height: calc(100vh - 70px); }
+.library {
+  width: min(1180px, calc(100% - 48px)); min-height: 0; margin: 0 auto; padding: 34px 0 70px;
+  border: 0; background: transparent; display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end; column-gap: 18px;
+}
+.library-header { grid-column: 1; margin: 0; }
+.library-header .eyebrow { display: none; }
+.library h1 { font-size: 22px; }
+.library .button.full { grid-column: 2; grid-row: 1; width: auto; min-width: 132px; }
+.library .search-field { grid-column: 1; width: 360px; margin-top: 18px; background: white; }
+.library-summary { grid-column: 1 / -1; justify-content: flex-start; gap: 18px; padding: 9px 2px 16px; }
+.workout-list {
+  grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px; max-height: none; overflow: visible; padding: 0;
+}
+.workout-list-card {
+  min-height: 118px; padding: 16px; border-radius: 17px; position: relative;
+  box-shadow: 0 2px 5px rgba(20,35,50,.04); display: flex; flex-direction: column;
+}
+.workout-list-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(20,35,50,.08); }
+.workout-card-main { padding-right: 96px; }
+.workout-card-main > svg { display: none; }
+.workout-card-main strong { font-size: 14px; }
+.workout-card-main small { display: none; }
+.workout-card-actions { position: absolute; top: 10px; right: 10px; margin: 0; }
+.workout-volume-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; min-height: 20px; }
+.workout-volume-badges span { padding: 4px 7px; border-radius: 5px; color: white; background: #a629e5; font-size: 8px; font-weight: 800; }
+.workout-day-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: auto; padding-top: 10px; }
+.workout-day-chips span { padding: 5px 9px; border-radius: 6px; color: #169775; background: #e4faf3; border: 1px solid #b8ecd9; font-size: 8px; font-weight: 700; }
+.local-note { grid-column: 1 / -1; margin: 22px 0 0; width: fit-content; }
+.empty-list { grid-column: 1 / -1; }
+
+.editor-area {
+  position: fixed; inset: 0; z-index: 80; padding: 24px; background: rgba(17,24,39,.62);
+  backdrop-filter: blur(3px); display: grid; place-items: center;
+}
+.editor-area:empty { display: none; }
+.editor-card {
+  width: min(1180px, 100%); max-width: none; max-height: calc(100vh - 48px); overflow: auto;
+  border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.3); position: relative;
+}
+.editor-close {
+  position: absolute; top: 14px; right: 16px; z-index: 4; width: 34px; height: 34px;
+  border-radius: 9px; display: grid; place-items: center; background: transparent; color: #8290a1; cursor: pointer;
+}
+.editor-close:hover { background: #f2f5f7; color: var(--ink); }
+.editor-heading { padding: 18px 56px 14px 24px; align-items: center; }
+.name-field input { font-size: 17px; }
+.weekday-tabs { grid-template-columns: repeat(7, minmax(82px, 1fr)); }
+.weekday-tabs button { min-height: 54px; }
+.day-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.day-note-row { grid-template-columns: minmax(0, 1fr) auto; }
+.editor-footer {
+  position: sticky; bottom: 0; z-index: 15; padding: 14px 24px; background: rgba(255,255,255,.96);
+  border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px;
+}
+
+.exercise-result-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.exercise-result-main img, .exercise-result-main .no-video { width: 54px; height: 38px; border-radius: 7px; object-fit: cover; background: #edf2f5; display: grid; place-items: center; color: #9aa6b3; flex: 0 0 auto; }
+.video-preview { width: 48px; height: 48px; padding: 0; border-radius: 7px; overflow: hidden; position: relative; background: #0a6; cursor: pointer; flex: 0 0 auto; }
+.video-preview img { width: 100%; height: 100%; object-fit: cover; }
+.video-preview span { position: absolute; inset: 0; display: grid; place-items: center; color: white; background: rgba(0,0,0,.28); }
+.video-modal { width: min(820px, 100%); }
+.video-modal-heading { padding-right: 45px; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+.video-modal-heading span { color: var(--primary-dark); background: var(--primary-soft); border-radius: 999px; padding: 6px 10px; font-size: 10px; font-weight: 800; }
+.video-frame { margin-top: 18px; background: #07111d; border-radius: 13px; overflow: hidden; aspect-ratio: 16 / 9; }
+.video-frame iframe { width: 100%; height: 100%; border: 0; }
+
+@media (max-width: 900px) {
+  .workspace { min-height: calc(100vh - 62px); }
+  .library { display: grid; position: static; width: calc(100% - 24px); padding: 22px 0 45px; min-height: 0; }
+  .library .button.full { display: inline-flex; }
+  .workout-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .editor-area { display: grid; inset: 0; padding: 10px; }
+  .editor-area:empty { display: none; }
+  .editor-card { max-height: calc(100vh - 20px); border-radius: 14px; }
+  .weekday-tabs { grid-template-columns: repeat(7, 76px); }
+  .day-toolbar { display: block; }
+  .day-note-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .library { grid-template-columns: 1fr auto; }
+  .library .search-field { width: 100%; grid-column: 1 / -1; }
+  .workout-list { grid-template-columns: 1fr; }
+  .workout-list-card { min-height: 112px; }
+  .editor-area { padding: 0; }
+  .editor-card { max-height: 100vh; min-height: 100vh; border-radius: 0; }
+  .editor-heading { padding: 16px 52px 12px 16px; display: block; }
+  .catalog-indicator { margin-top: 9px; }
+  .day-toolbar { padding: 14px 14px 10px; }
+  .day-note-row { padding: 0 14px 14px; }
+  .exercise-picker { padding: 0 14px 14px; }
+  .exercise-list { padding: 0 14px 18px; }
+  .editor-footer { padding: 12px 14px; }
+}
