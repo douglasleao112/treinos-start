@@ -203,20 +203,3 @@ export function exportSupabaseSql(workouts: Workout[], catalog: Exercise[]) {
   );
 }
 
-const readJsonVariable = (sql: string, variableName: string): unknown => {
-  const pattern = new RegExp(
-    `${variableName}\\s+jsonb\\s*:=\\s*(\\$[a-zA-Z0-9_]*\\$)([\\s\\S]*?)\\1::jsonb\\s*;`,
-  );
-  const match = sql.match(pattern);
-  if (!match) throw new Error(`Arquivo SQL inválido: ${variableName} não foi encontrado.`);
-  return JSON.parse(match[2]);
-};
-
-export function importSupabaseSql(sql: string): { workouts: Workout[]; customExercises: Exercise[] } {
-  const workouts = readJsonVariable(sql, 'v_new_workouts');
-  const customExercises = readJsonVariable(sql, 'v_custom_exercises');
-  if (!Array.isArray(workouts) || !Array.isArray(customExercises)) {
-    throw new Error('Arquivo SQL inválido: o pacote STARTFIT está incompleto.');
-  }
-  return { workouts: workouts as Workout[], customExercises: customExercises as Exercise[] };
-}

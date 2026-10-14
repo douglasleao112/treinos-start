@@ -8,7 +8,6 @@ import {
   Copy,
   Database,
   Dumbbell,
-  FileUp,
   GripVertical,
   MoreVertical,
   Pencil,
@@ -22,8 +21,8 @@ import {
 } from 'lucide-react';
 import type { Exercise, StudioData, Workout, WorkoutDay, WorkoutExercise, WorkoutSet } from './types';
 import { FALLBACK_EXERCISES, loadExerciseCatalog } from './catalog';
-import { hydrateExerciseNotes, loadStudioData, saveStudioData } from './storage';
-import { exportSupabaseSql, importSupabaseSql } from './sql';
+import { loadStudioData, saveStudioData } from './storage';
+import { exportSupabaseSql } from './sql';
 
 const WEEKDAYS = [
   { value: 0, short: 'Dom', label: 'Domingo' },
@@ -187,7 +186,6 @@ function App() {
   const [exercisePage, setExercisePage] = useState(1);
   const [exerciseDraft, setExerciseDraft] = useState<Exercise | null>(null);
   const [exerciseDraftIntent, setExerciseDraftIntent] = useState<ExerciseDraftIntent>('library');
-  const importRef = useRef<HTMLInputElement>(null);
   const exerciseSearchInputRef = useRef<HTMLInputElement>(null);
   const replacementSearchInputRef = useRef<HTMLInputElement>(null);
   const replacementMenuRef = useRef<HTMLDivElement>(null);
@@ -610,36 +608,10 @@ function App() {
     }));
   };
 
-  const handleImport = async (file: File) => {
-    try {
-      const content = await file.text();
-      const parsed = importSupabaseSql(content);
-      const workouts = parsed.workouts;
-      const valid = workouts.filter((workout: any) => workout?.id && workout?.name && Array.isArray(workout?.days));
-      const customExercises = Array.isArray(parsed.customExercises)
-        ? parsed.customExercises.filter((exercise: any) => exercise?.id && exercise?.name)
-        : [];
-      if (!valid.length && !customExercises.length) throw new Error('Nenhum treino ou exercício válido encontrado.');
-      setData({
-        version: 1,
-        workouts: hydrateExerciseNotes(valid, customExercises),
-        customExercises,
-        exerciseNotesMigrated: true,
-        selectedWorkoutId: valid[0]?.id ?? null,
-        updatedAt: now(),
-      });
-      setToast({ tone: 'success', text: `${valid.length} treino(s) e ${customExercises.length} exercício(s) importado(s) do SQL.` });
-    } catch (error: any) {
-      setToast({ tone: 'error', text: error?.message || 'Não foi possível importar o arquivo SQL.' });
-    } finally {
-      if (importRef.current) importRef.current.value = '';
-    }
-  };
-
   const handleSqlExport = () => {
     try {
       exportSupabaseSql(data.workouts, exerciseCatalog);
-      setToast({ tone: 'success', text: 'SQL completo exportado. O mesmo arquivo também pode ser reimportado no Studio.' });
+      setToast({ tone: 'success', text: 'Arquivo SQL completo exportado.' });
     } catch (error: any) {
       setToast({ tone: 'error', text: error?.message || 'Não foi possível gerar o arquivo SQL.' });
     }
@@ -787,9 +759,7 @@ function App() {
             : 'Salvando localmente...'}
         </div>
         <div className="header-actions">
-          <button className="button ghost" onClick={() => importRef.current?.click()}><FileUp size={16} /> Importar SQL</button>
           <button className="button primary" onClick={handleSqlExport} disabled={!data.workouts.length && !data.customExercises.length}><Database size={16} /> Exportar SQL</button>
-          <input ref={importRef} type="file" accept="application/sql,text/plain,.sql" hidden onChange={(event) => event.target.files?.[0] && void handleImport(event.target.files[0])} />
         </div>
       </header>
 
