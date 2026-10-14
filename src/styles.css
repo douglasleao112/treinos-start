@@ -431,8 +431,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   font-weight: 700;
   background: transparent;
 }
+.day-sheet {
+  margin: 18px 16px 16px;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+}
 .weekday-tabs {
-  margin: 18px 16px 0;
+  margin: 0;
   padding: 0 8px;
   gap: 8px;
   border: 0;
@@ -485,7 +491,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  padding: 16px 30px 12px;
+  padding: 16px 14px 12px;
 }
 .day-name-field, .day-note-field {
   display: flex;
@@ -567,16 +573,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   border-color: var(--primary);
   outline: 3px solid var(--primary-soft);
 }
-.exercise-picker { padding: 0 30px 14px; }
+.exercise-picker { padding: 0 14px 14px; }
 .exercise-search { height: 40px; margin-top: 5px; background: #fbfcfd; }
 .exercise-search input { padding-left: 1px; }
-.exercise-results { top: 62px; left: 30px; right: 30px; }
+.exercise-results { top: 62px; left: 14px; right: 14px; }
 .exercise-list {
-  margin: 0 16px 16px;
+  margin: 0;
   padding: 13px;
   gap: 10px;
-  border: 1px solid var(--line);
-  border-radius: 0 0 12px 12px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
   max-height: none;
   overflow: visible;
 }
@@ -628,11 +635,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 @media (max-width: 720px) {
   .editor-area { padding: 10px; }
   .editor-card { width: 100%; max-height: calc(100vh - 20px); min-height: 0; border-radius: 16px; }
+  .day-sheet { margin: 18px 10px 12px; }
   .weekday-tabs { overflow-x: auto; grid-template-columns: repeat(7, 72px); }
-  .day-config-grid { grid-template-columns: 1fr; padding: 14px 16px 12px; }
-  .exercise-picker { padding: 0 16px 14px; }
-  .exercise-results { left: 16px; right: 16px; }
-  .exercise-list { margin: 0 10px 12px; max-height: none; }
+  .day-config-grid { grid-template-columns: 1fr; padding: 14px 6px 12px; }
+  .exercise-picker { padding: 0 6px 14px; }
+  .exercise-results { left: 6px; right: 6px; }
+  .exercise-list { margin: 0; max-height: none; }
   .exercise-meta-grid { grid-template-columns: 58px 1fr 1fr 72px; }
   .exercise-meta-grid .exercise-note { grid-column: 1 / -1; }
 }

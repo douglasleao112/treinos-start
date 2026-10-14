@@ -860,6 +860,7 @@ function App() {
                 </div>
               </div>
 
+              <div className="day-sheet">
               <div className="weekday-tabs">
                 {WEEKDAYS.map((weekday) => {
                   const day = selectedWorkout.days.find((item) => item.weekday === weekday.value);
@@ -1001,6 +1002,7 @@ function App() {
                   {!currentDay.exercises.length && <div className="empty-day"><Dumbbell size={31} /><strong>Nenhum exercício neste dia</strong><p>Use a busca acima para começar a montar a sessão.</p></div>}
                 </div>
               </>}
+              </div>
               <div className="editor-footer">
                 <button className="button ghost" onClick={() => setEditorOpen(false)}>Cancelar</button>
                 <button className="button primary" onClick={() => { setEditorOpen(false); setToast({ tone: 'success', text: 'Treino salvo neste navegador.' }); }}><Check size={16} /> Salvar treino</button>
