@@ -4,7 +4,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Clipboard,
   Copy,
   Database,
   Dumbbell,
@@ -28,13 +27,13 @@ import { emptyStudioData, loadStudioData, saveStudioData } from './storage';
 import { exportSupabaseSql, importSupabaseSql } from './sql';
 
 const WEEKDAYS = [
-  { value: 0, short: 'DOM', label: 'Domingo' },
-  { value: 1, short: 'SEG', label: 'Segunda' },
-  { value: 2, short: 'TER', label: 'Terça' },
-  { value: 3, short: 'QUA', label: 'Quarta' },
-  { value: 4, short: 'QUI', label: 'Quinta' },
-  { value: 5, short: 'SEX', label: 'Sexta' },
-  { value: 6, short: 'SÁB', label: 'Sábado' },
+  { value: 0, short: 'Dom', label: 'Domingo' },
+  { value: 1, short: 'Seg', label: 'Segunda' },
+  { value: 2, short: 'Ter', label: 'Terça' },
+  { value: 3, short: 'Qua', label: 'Quarta' },
+  { value: 4, short: 'Qui', label: 'Quinta' },
+  { value: 5, short: 'Sex', label: 'Sexta' },
+  { value: 6, short: 'Sáb', label: 'Sábado' },
 ];
 
 const uid = () => crypto.randomUUID?.() || `local_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -135,6 +134,8 @@ function App() {
   const [libraryQuery, setLibraryQuery] = useState('');
   const [exerciseQuery, setExerciseQuery] = useState('');
   const [expandedExercises, setExpandedExercises] = useState<Record<string, boolean>>({});
+  const [expandedSeries, setExpandedSeries] = useState<Record<string, boolean>>({});
+  const [repeatWorkoutNote, setRepeatWorkoutNote] = useState(false);
   const [copiedDay, setCopiedDay] = useState<WorkoutDay | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -298,6 +299,23 @@ function App() {
     });
   };
 
+  const updateExerciseMainField = (exerciseIndex: number, field: keyof WorkoutSet, value: string | number) => {
+    updateExercise(exerciseIndex, (exercise) => {
+      const details = exercise.setDetails?.length
+        ? exercise.setDetails
+        : Array.from({ length: exercise.sets }, () => ({
+          reps: exercise.reps,
+          restSeconds: exercise.restSeconds,
+          prescribedLoad: exercise.prescribedLoad || '',
+        }));
+      return {
+        ...exercise,
+        [field]: value,
+        setDetails: details.map((set) => ({ ...set, [field]: value })),
+      } as WorkoutExercise;
+    });
+  };
+
   const copyCurrentDay = () => {
     if (!currentDay) return;
     setCopiedDay(cloneDay(currentDay));
@@ -310,14 +328,26 @@ function App() {
     setToast({ tone: 'success', text: 'Exercícios e observações colados neste dia.' });
   };
 
-  const repeatDayNote = () => {
-    if (!currentDay) return;
+  const updateDayNote = (value: string) => {
+    if (!repeatWorkoutNote) {
+      updateDay((day) => ({ ...day, note: value }));
+      return;
+    }
+    updateSelectedWorkout((workout) => ({
+      ...workout,
+      note: value,
+      days: workout.days.map((day) => ({ ...day, note: value })),
+    }));
+  };
+
+  const repeatDayNote = (checked: boolean) => {
+    setRepeatWorkoutNote(checked);
+    if (!checked || !currentDay) return;
     updateSelectedWorkout((workout) => ({
       ...workout,
       note: currentDay.note || '',
-      days: workout.days.map((day) => day.exercises.length ? { ...day, note: currentDay.note || '' } : day),
+      days: workout.days.map((day) => ({ ...day, note: currentDay.note || '' })),
     }));
-    setToast({ tone: 'success', text: 'Observação aplicada em todos os dias com treino.' });
   };
 
   const handleImport = async (file: File) => {
@@ -541,18 +571,18 @@ function App() {
               {currentDay && <>
                 <div className="day-config-grid">
                   <div className="day-name-field">
-                    <div className="field-heading"><label>Nome da sessão</label><span className="inline-tools"><button onClick={copyCurrentDay} title="Copiar dia"><Clipboard size={14} /></button><button onClick={pasteCurrentDay} disabled={!copiedDay} title="Colar dia"><Upload size={14} /></button></span></div>
+                    <div className="field-heading"><label>Nome da sessão</label><span className="inline-tools"><button onClick={() => updateDay((day) => ({ ...day, exercises: [] }))} disabled={!currentDay.exercises.length} title="Excluir todos os exercícios do dia"><Trash2 size={14} /></button><button onClick={copyCurrentDay} disabled={!currentDay.exercises.length} title="Copiar treino do dia"><Copy size={14} /></button>{copiedDay && <button onClick={pasteCurrentDay} title="Colar treino copiado"><Upload size={14} /></button>}</span></div>
                     <input value={currentDay.label} onChange={(event) => updateDay((day) => ({ ...day, label: event.target.value }))} />
                   </div>
                   <div className="day-note-field">
-                    <div className="field-heading"><label>Observação do treino</label><span className="note-tools"><button onClick={() => updateDay((day) => ({ ...day, note: '' }))} disabled={!currentDay.note?.trim()}>Limpar</button><button onClick={repeatDayNote} disabled={!currentDay.note?.trim()}><span className="check-square" /> Repetir dias</button></span></div>
-                    <input value={currentDay.note || ''} onChange={(event) => updateDay((day) => ({ ...day, note: event.target.value }))} placeholder="Ex.: Realizar bike, mobilidade..." />
+                    <div className="field-heading"><label>Observação do treino</label><span className="note-tools"><button onClick={() => updateDayNote('')} disabled={!currentDay.note?.trim()}>Limpar</button><label className="repeat-days"><input type="checkbox" checked={repeatWorkoutNote} onChange={(event) => repeatDayNote(event.target.checked)} /> Repetir dias</label></span></div>
+                    <input value={currentDay.note || ''} onChange={(event) => updateDayNote(event.target.value)} placeholder="Ex.: Realizar bike, mobilidade..." />
                   </div>
                 </div>
 
                 <div className="exercise-picker">
                   <label>Adicionar exercício</label>
-                  <div className="exercise-search"><Search size={18} /><input value={exerciseQuery} onChange={(event) => setExerciseQuery(event.target.value)} placeholder="Digite para buscar um exercício..." /></div>
+                  <div className="exercise-search"><input value={exerciseQuery} onChange={(event) => setExerciseQuery(event.target.value)} placeholder="Digite para buscar um exercício..." /></div>
                   {exerciseResults.length > 0 && <div className="exercise-results">
                     {exerciseResults.map((exercise) => <button key={exercise.id} onClick={() => addExercise(exercise)}>
                       <div className="exercise-result-main">
@@ -570,36 +600,32 @@ function App() {
                     const expanded = expandedExercises[key] ?? index === 0;
                     const details = item.setDetails?.length ? item.setDetails : Array.from({ length: item.sets }, () => ({ reps: item.reps, restSeconds: item.restSeconds, prescribedLoad: item.prescribedLoad || '' }));
                     return <article className="exercise-card" key={`${item.exerciseId}-${index}`}>
-                      <div className="exercise-card-header">
+                      <div className="exercise-card-header" onClick={() => setExpandedExercises((current) => ({ ...current, [key]: !expanded }))}>
                         <GripVertical size={18} className="grip" />
                         <div className="exercise-title"><strong>{exercise?.name || `Exercício ${item.exerciseId}`}</strong><small>{exercise?.muscleGroup || 'Exercício do catálogo'}</small></div>
-                        {exercise?.youtubeId && <button className="video-preview" onClick={() => setVideoExercise(exercise)} title="Assistir ao vídeo">
-                          <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt={`Vídeo de ${exercise.name}`} />
-                          <span><Play size={14} fill="currentColor" /></span>
-                        </button>}
                         <div className="exercise-actions">
-                          <button className="expand" onClick={() => setExpandedExercises((current) => ({ ...current, [key]: !expanded }))} title={expanded ? 'Recolher' : 'Expandir'}>{expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</button>
-                          <button onClick={() => duplicateExercise(index)} title="Duplicar"><Copy size={16} /></button>
-                          <button className="danger" onClick={() => removeExercise(index)} title="Excluir"><Trash2 size={16} /></button>
+                          <button className="expand" onClick={(event) => { event.stopPropagation(); setExpandedExercises((current) => ({ ...current, [key]: !expanded })); }} title={expanded ? 'Recolher' : 'Expandir'}>{expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</button>
+                          <button onClick={(event) => { event.stopPropagation(); duplicateExercise(index); }} title="Duplicar"><Copy size={16} /></button>
+                          <button className="danger" onClick={(event) => { event.stopPropagation(); removeExercise(index); }} title="Excluir"><Trash2 size={16} /></button>
                         </div>
                       </div>
                       {expanded && <div className="exercise-content">
                         <div className="exercise-meta-grid">
                           <label>Série<input type="number" min="1" max="20" value={item.sets} onChange={(event) => changeSets(index, Number(event.target.value))} /></label>
-                          <label>Reps<input value={item.reps} onChange={(event) => updateExercise(index, (exerciseItem) => ({ ...exerciseItem, reps: event.target.value }))} /></label>
-                          <label>Peso<input value={item.prescribedLoad || ''} onChange={(event) => updateExercise(index, (exerciseItem) => ({ ...exerciseItem, prescribedLoad: event.target.value }))} /></label>
-                          <label>Descanso<input type="number" min="0" value={item.restSeconds} onChange={(event) => updateExercise(index, (exerciseItem) => ({ ...exerciseItem, restSeconds: Number(event.target.value) }))} /></label>
+                          <label>Reps<input value={item.reps} onChange={(event) => updateExerciseMainField(index, 'reps', event.target.value)} /></label>
+                          <label>Peso<input value={item.prescribedLoad || ''} onChange={(event) => updateExerciseMainField(index, 'prescribedLoad', event.target.value)} /></label>
+                          <label>Descanso<input type="number" min="0" value={item.restSeconds} onChange={(event) => updateExerciseMainField(index, 'restSeconds', Number(event.target.value))} /></label>
+                          <button className={`series-toggle ${expandedSeries[key] ? 'open' : ''}`} onClick={() => setExpandedSeries((current) => ({ ...current, [key]: !current[key] }))} title={expandedSeries[key] ? 'Recolher séries individuais' : 'Abrir séries individuais'}><ChevronDown size={16} /></button>
                           <label className="exercise-note">Observação<input value={item.note || ''} onChange={(event) => updateExercise(index, (exerciseItem) => ({ ...exerciseItem, note: event.target.value }))} placeholder="Observações sobre o exercício" /></label>
                         </div>
-                        <div className="sets-table">
-                          <div className="set-row set-head"><span>Série</span><span>Repetições</span><span>Carga</span><span>Descanso</span></div>
+                        {expandedSeries[key] && <div className="series-detail-area"><div className="sets-table">
                           {details.map((set, setIndex) => <div className="set-row" key={setIndex}>
-                            <b>{setIndex + 1}ª</b>
-                            <input value={set.reps} onChange={(event) => updateSet(index, setIndex, 'reps', event.target.value)} />
-                            <input value={set.prescribedLoad || ''} onChange={(event) => updateSet(index, setIndex, 'prescribedLoad', event.target.value)} placeholder="—" />
-                            <input type="number" min="0" value={set.restSeconds} onChange={(event) => updateSet(index, setIndex, 'restSeconds', Number(event.target.value))} />
+                            <label><span className={setIndex ? 'sr-label' : ''}>Série</span><b>{setIndex + 1}º</b></label>
+                            <label><span>Reps</span><input value={set.reps} onChange={(event) => updateSet(index, setIndex, 'reps', event.target.value)} /></label>
+                            <label><span>Peso</span><input value={set.prescribedLoad || ''} onChange={(event) => updateSet(index, setIndex, 'prescribedLoad', event.target.value)} /></label>
+                            <label><span>Descanso</span><input type="number" min="0" value={set.restSeconds} onChange={(event) => updateSet(index, setIndex, 'restSeconds', Number(event.target.value))} /></label>
                           </div>)}
-                        </div>
+                        </div>{exercise?.youtubeId && <button className="series-video" onClick={() => setVideoExercise(exercise)} title="Assistir ao vídeo"><img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt={`Vídeo de ${exercise.name}`} /><span><Play size={14} fill="currentColor" /></span></button>}</div>}
                       </div>}
                     </article>;
                   })}
