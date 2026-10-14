@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowLeft,
   Check,
@@ -116,7 +117,24 @@ const workoutMuscleVolumes = (workout: Workout, exerciseById: Map<string, Exerci
 };
 
 type Toast = { tone: 'success' | 'error' | 'info'; text: string } | null;
+type ExerciseDraftIntent = 'library' | 'add-to-day' | { type: 'replace'; index: number };
+type FloatingMenuPosition = { left: number; top: number; width: number; maxHeight: number };
 const MUSCLE_GROUPS = ['Peitoral', 'Costas', 'Deltoide', 'Bíceps', 'Tríceps', 'Quadríceps', 'Posterior de coxa', 'Glúteos', 'Panturrilha', 'Abdômen'];
+
+const getFloatingMenuPosition = (input: HTMLInputElement): FloatingMenuPosition => {
+  const rect = input.getBoundingClientRect();
+  const margin = 12;
+  const preferredHeight = 360;
+  const availableBelow = window.innerHeight - rect.bottom - margin;
+  const openAbove = availableBelow < 190 && rect.top > availableBelow;
+  const maxHeight = Math.max(150, Math.min(preferredHeight, openAbove ? rect.top - margin : availableBelow));
+  return {
+    left: Math.max(margin, Math.min(rect.left, window.innerWidth - rect.width - margin)),
+    top: openAbove ? Math.max(margin, rect.top - maxHeight - 5) : rect.bottom + 5,
+    width: rect.width,
+    maxHeight,
+  };
+};
 
 const extractYoutubeId = (value: string) => {
   const trimmed = value.trim();
@@ -135,6 +153,8 @@ function App() {
   const [exerciseQuery, setExerciseQuery] = useState('');
   const [replacingExerciseIndex, setReplacingExerciseIndex] = useState<number | null>(null);
   const [replacementExerciseQuery, setReplacementExerciseQuery] = useState('');
+  const [exerciseMenuPosition, setExerciseMenuPosition] = useState<FloatingMenuPosition | null>(null);
+  const [replacementMenuPosition, setReplacementMenuPosition] = useState<FloatingMenuPosition | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Record<string, boolean>>({});
   const [expandedSeries, setExpandedSeries] = useState<Record<string, boolean>>({});
   const [repeatWorkoutNote, setRepeatWorkoutNote] = useState(false);
@@ -152,7 +172,10 @@ function App() {
   const [exerciseGroup, setExerciseGroup] = useState('');
   const [exercisePage, setExercisePage] = useState(1);
   const [exerciseDraft, setExerciseDraft] = useState<Exercise | null>(null);
+  const [exerciseDraftIntent, setExerciseDraftIntent] = useState<ExerciseDraftIntent>('library');
   const importRef = useRef<HTMLInputElement>(null);
+  const exerciseSearchInputRef = useRef<HTMLInputElement>(null);
+  const replacementSearchInputRef = useRef<HTMLInputElement>(null);
   const pointerDragRef = useRef<{
     type: 'day' | 'exercise';
     pointerId: number;
@@ -196,6 +219,40 @@ function App() {
     const timer = window.setTimeout(() => setToast(null), 3200);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (!exerciseQuery.trim()) {
+      setExerciseMenuPosition(null);
+      return;
+    }
+    const updatePosition = () => {
+      if (exerciseSearchInputRef.current) setExerciseMenuPosition(getFloatingMenuPosition(exerciseSearchInputRef.current));
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [exerciseQuery]);
+
+  useEffect(() => {
+    if (replacingExerciseIndex == null || !replacementExerciseQuery.trim()) {
+      setReplacementMenuPosition(null);
+      return;
+    }
+    const updatePosition = () => {
+      if (replacementSearchInputRef.current) setReplacementMenuPosition(getFloatingMenuPosition(replacementSearchInputRef.current));
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [replacingExerciseIndex, replacementExerciseQuery]);
 
   useEffect(() => {
     if (!selectedWorkout) return;
@@ -536,11 +593,19 @@ function App() {
     }
   };
 
-  const newExercise = () => setExerciseDraft({
-    id: uid(), name: '', muscleGroup: '', youtubeId: '', youtubeUrl: '', videoOrientation: 'vertical',
-    defaultRestSeconds: null, note: '', secondaryMuscleGroups: [''], volumePoints: {}, equivalentExerciseIds: [],
-    isCustom: true, createdAt: now(),
-  });
+  const newExercise = (intent: ExerciseDraftIntent = 'library') => {
+    setExerciseDraftIntent(intent);
+    setExerciseDraft({
+      id: uid(), name: '', muscleGroup: '', youtubeId: '', youtubeUrl: '', videoOrientation: 'vertical',
+      defaultRestSeconds: null, note: '', secondaryMuscleGroups: [''], volumePoints: {}, equivalentExerciseIds: [],
+      isCustom: true, createdAt: now(),
+    });
+  };
+
+  const closeExerciseDraft = () => {
+    setExerciseDraft(null);
+    setExerciseDraftIntent('library');
+  };
 
   const saveExercise = () => {
     if (!exerciseDraft?.name.trim()) {
@@ -580,8 +645,17 @@ function App() {
         ? current.customExercises.map((item) => item.id === normalized.id ? normalized : item)
         : [normalized, ...current.customExercises],
     }));
-    setExerciseDraft(null);
-    setToast({ tone: 'success', text: 'Exercício salvo neste navegador.' });
+    const intent = exerciseDraftIntent;
+    closeExerciseDraft();
+    if (intent === 'add-to-day') {
+      addExercise(normalized);
+      setToast({ tone: 'success', text: `${normalized.name} criado e adicionado ao treino.` });
+    } else if (typeof intent === 'object' && intent.type === 'replace') {
+      replaceExercise(intent.index, normalized);
+      setToast({ tone: 'success', text: `${normalized.name} criado e aplicado ao treino.` });
+    } else {
+      setToast({ tone: 'success', text: 'Exercício salvo neste navegador.' });
+    }
   };
 
   const deleteCustomExercise = (exercise: Exercise) => {
@@ -699,7 +773,7 @@ function App() {
           </div>
           </> : <>
             <div className="library-header exercise-library-header"><div><h1>Exercícios</h1><small>{exerciseCatalog.length} exercícios cadastrados · {data.customExercises.length} criado(s) aqui</small></div></div>
-            <button className="button primary full" onClick={newExercise}><Plus size={18} /> Novo exercício</button>
+            <button className="button primary full" onClick={() => newExercise()}><Plus size={18} /> Novo exercício</button>
             <label className="search-field exercise-library-search"><Search size={17} /><input value={exerciseLibraryQuery} onChange={(event) => { setExerciseLibraryQuery(event.target.value); setExercisePage(1); }} placeholder="Buscar exercício ou grupo muscular..." /></label>
             <select className="group-filter" value={exerciseGroup} onChange={(event) => { setExerciseGroup(event.target.value); setExercisePage(1); }} aria-label="Filtrar exercícios">
               <option value="">Todos os grupamentos</option>
@@ -712,7 +786,7 @@ function App() {
                   {exercise.youtubeId && <span><Play size={14} fill="currentColor" /></span>}
                 </button>
                 <div className="exercise-library-info"><strong>{exercise.name}</strong><small>{exercise.muscleGroup || 'Sem grupamento'}</small><em>{exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</em>{exercise.isCustom && <b>CRIADO NO STUDIO</b>}</div>
-                {exercise.isCustom && <div className="exercise-library-actions"><button onClick={() => setExerciseDraft({ ...exercise })} title="Editar"><Pencil size={15} /></button><button onClick={() => deleteCustomExercise(exercise)} title="Excluir"><Trash2 size={15} /></button></div>}
+                {exercise.isCustom && <div className="exercise-library-actions"><button onClick={() => { setExerciseDraftIntent('library'); setExerciseDraft({ ...exercise }); }} title="Editar"><Pencil size={15} /></button><button onClick={() => deleteCustomExercise(exercise)} title="Excluir"><Trash2 size={15} /></button></div>}
               </article>)}
               {!visibleExerciseLibrary.length && <div className="empty-list"><Dumbbell size={30} /><p>Nenhum exercício encontrado.</p></div>}
             </div>
@@ -788,15 +862,7 @@ function App() {
 
                 <div className="exercise-picker">
                   <label>Adicionar exercício</label>
-                  <div className="exercise-search"><input value={exerciseQuery} onChange={(event) => setExerciseQuery(event.target.value)} placeholder="Digite para buscar um exercício..." /></div>
-                  {exerciseResults.length > 0 && <div className="exercise-results">
-                    {exerciseResults.map((exercise) => <button key={exercise.id} onClick={() => addExercise(exercise)}>
-                      <div className="exercise-result-main">
-                        {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <span className="no-video"><Dumbbell size={16} /></span>}
-                        <div><strong>{exercise.name}</strong><small>{exercise.muscleGroup || 'Sem grupamento'} · {exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</small></div>
-                      </div><Plus size={17} />
-                    </button>)}
-                  </div>}
+                  <div className="exercise-search"><input ref={exerciseSearchInputRef} value={exerciseQuery} onChange={(event) => setExerciseQuery(event.target.value)} placeholder="Digite para buscar um exercício..." /></div>
                 </div>
 
                 <div className="exercise-list">
@@ -838,18 +904,13 @@ function App() {
                         <div className="exercise-title">
                           {replacingExerciseIndex === index ? <div className="exercise-replace-search" onClick={(event) => event.stopPropagation()}>
                             <input
+                              ref={replacementSearchInputRef}
                               autoFocus
                               value={replacementExerciseQuery}
                               onChange={(event) => setReplacementExerciseQuery(event.target.value)}
                               onKeyDown={(event) => { if (event.key === 'Escape') closeExerciseReplacement(); }}
                               placeholder="Buscar outro exercício..."
                             />
-                            <div className="exercise-replace-results">
-                              {replacementExerciseResults.length ? replacementExerciseResults.map((replacement) => <button key={replacement.id} type="button" onClick={() => replaceExercise(index, replacement)}>
-                                <strong>{replacement.name}</strong>
-                                <small>{replacement.muscleGroup || 'Sem grupamento'}</small>
-                              </button>) : <span>Nenhum exercício encontrado.</span>}
-                            </div>
                           </div> : <button
                             type="button"
                             className="exercise-name-button"
@@ -896,8 +957,36 @@ function App() {
         </section>
       </main>
 
+      {exerciseQuery.trim() && exerciseMenuPosition && createPortal(
+        <div className="exercise-results exercise-results-floating" style={{ left: exerciseMenuPosition.left, top: exerciseMenuPosition.top, width: exerciseMenuPosition.width, maxHeight: exerciseMenuPosition.maxHeight }}>
+          <div className="floating-exercise-options">
+            {exerciseResults.length ? exerciseResults.map((exercise) => <button key={exercise.id} onClick={() => addExercise(exercise)}>
+              <div className="exercise-result-main">
+                {exercise.youtubeId ? <img src={`https://img.youtube.com/vi/${exercise.youtubeId}/mqdefault.jpg`} alt="" /> : <span className="no-video"><Dumbbell size={16} /></span>}
+                <div><strong>{exercise.name}</strong><small>{exercise.muscleGroup || 'Sem grupamento'} · {exercise.youtubeId ? 'Com vídeo' : 'Sem vídeo'}</small></div>
+              </div><Plus size={17} />
+            </button>) : <span className="floating-empty-result">Nenhum exercício encontrado.</span>}
+          </div>
+          <button className="create-exercise-option" onClick={() => { setExerciseQuery(''); newExercise('add-to-day'); }}><Plus size={17} /> Adicionar novo exercício</button>
+        </div>,
+        document.body,
+      )}
+
+      {replacingExerciseIndex != null && replacementExerciseQuery.trim() && replacementMenuPosition && createPortal(
+        <div className="exercise-replace-results exercise-results-floating" style={{ left: replacementMenuPosition.left, top: replacementMenuPosition.top, width: replacementMenuPosition.width, maxHeight: replacementMenuPosition.maxHeight }}>
+          <div className="floating-exercise-options">
+            {replacementExerciseResults.length ? replacementExerciseResults.map((replacement) => <button key={replacement.id} type="button" onClick={() => replaceExercise(replacingExerciseIndex, replacement)}>
+              <strong>{replacement.name}</strong>
+              <small>{replacement.muscleGroup || 'Sem grupamento'}</small>
+            </button>) : <span className="floating-empty-result">Nenhum exercício encontrado.</span>}
+          </div>
+          <button className="create-exercise-option" onClick={() => { const index = replacingExerciseIndex; closeExerciseReplacement(); newExercise({ type: 'replace', index }); }}><Plus size={17} /> Adicionar novo exercício</button>
+        </div>,
+        document.body,
+      )}
+
       {exerciseDraft && <div className="modal-layer"><div className="modal exercise-form-modal">
-        <button className="modal-close" onClick={() => setExerciseDraft(null)} aria-label="Fechar cadastro"><X size={20} /></button>
+        <button className="modal-close" onClick={closeExerciseDraft} aria-label="Fechar cadastro"><X size={20} /></button>
         <div className="exercise-form-heading"><h2>{data.customExercises.some((item) => item.id === exerciseDraft.id) ? 'Editar exercício' : 'Novo exercício'}</h2></div>
         <div className="exercise-form-body"><div className="exercise-form-grid">
           <label className="wide">Nome<input autoFocus value={exerciseDraft.name} onChange={(event) => setExerciseDraft({ ...exerciseDraft, name: event.target.value })} placeholder="Ex.: Supino reto" /></label>
@@ -915,7 +1004,7 @@ function App() {
           <label className="wide">Link ou ID do vídeo do YouTube (vertical)<input value={exerciseDraft.youtubeUrl || exerciseDraft.youtubeId || ''} onChange={(event) => { const value = event.target.value.trim(); setExerciseDraft({ ...exerciseDraft, youtubeUrl: value, youtubeId: extractYoutubeId(value) }); }} placeholder="Ex.: https://www.youtube.com/shorts/UHa9U-O09_U" /></label>
           <label className="wide">Observação (opcional)<textarea rows={2} value={exerciseDraft.note || ''} onChange={(event) => setExerciseDraft({ ...exerciseDraft, note: event.target.value })} placeholder="Dica de execução..." /></label>
         </div></div>
-        <div className="modal-actions exercise-form-actions"><button className="button ghost" onClick={() => setExerciseDraft(null)}>Cancelar</button><button className="button primary" onClick={saveExercise}>Salvar</button></div>
+        <div className="modal-actions exercise-form-actions"><button className="button ghost" onClick={closeExerciseDraft}>Cancelar</button><button className="button primary" onClick={saveExercise}>Salvar</button></div>
       </div></div>}
 
       {confirmDeleteId && <div className="modal-layer"><div className="modal compact">
