@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import type { Exercise, StudioData, Workout, WorkoutDay, WorkoutExercise, WorkoutSet } from './types';
 import { FALLBACK_EXERCISES, loadExerciseCatalog } from './catalog';
-import { emptyStudioData, loadStudioData, saveStudioData } from './storage';
+import { emptyStudioData, hydrateExerciseNotes, loadStudioData, saveStudioData } from './storage';
 import { exportSupabaseSql, importSupabaseSql } from './sql';
 
 const WEEKDAYS = [
@@ -70,7 +70,7 @@ const createExerciseRef = (exercise: Exercise): WorkoutExercise => {
     reps: '10–12',
     restSeconds: rest,
     prescribedLoad: '',
-    note: '',
+    note: exercise.note || '',
     setDetails: Array.from({ length: 3 }, () => ({ reps: '10–12', restSeconds: rest, prescribedLoad: '' })),
   };
 };
@@ -383,7 +383,11 @@ function App() {
   };
 
   const replaceExercise = (index: number, replacement: Exercise) => {
-    updateExercise(index, (exercise) => ({ ...exercise, exerciseId: replacement.id }));
+    updateExercise(index, (exercise) => ({
+      ...exercise,
+      exerciseId: replacement.id,
+      note: replacement.note || '',
+    }));
     closeExerciseReplacement();
     setToast({ tone: 'success', text: `Exercício trocado por ${replacement.name}.` });
   };
@@ -614,7 +618,14 @@ function App() {
         ? parsed.customExercises.filter((exercise: any) => exercise?.id && exercise?.name)
         : [];
       if (!valid.length && !customExercises.length) throw new Error('Nenhum treino ou exercício válido encontrado.');
-      setData({ version: 1, workouts: valid, customExercises, selectedWorkoutId: valid[0]?.id ?? null, updatedAt: now() });
+      setData({
+        version: 1,
+        workouts: hydrateExerciseNotes(valid, customExercises),
+        customExercises,
+        exerciseNotesMigrated: true,
+        selectedWorkoutId: valid[0]?.id ?? null,
+        updatedAt: now(),
+      });
       setToast({ tone: 'success', text: `${valid.length} treino(s) e ${customExercises.length} exercício(s) importado(s) do SQL.` });
     } catch (error: any) {
       setToast({ tone: 'error', text: error?.message || 'Não foi possível importar o arquivo SQL.' });
@@ -669,12 +680,30 @@ function App() {
       equivalentExerciseIds: exerciseDraft.equivalentExerciseIds || [],
       isCustom: true,
     };
-    setData((current) => ({
-      ...current,
-      customExercises: current.customExercises.some((item) => item.id === normalized.id)
-        ? current.customExercises.map((item) => item.id === normalized.id ? normalized : item)
-        : [normalized, ...current.customExercises],
-    }));
+    setData((current) => {
+      const previous = current.customExercises.find((item) => item.id === normalized.id);
+      const previousNote = previous?.note || '';
+      const workouts = previous
+        ? current.workouts.map((workout) => ({
+          ...workout,
+          days: workout.days.map((day) => ({
+            ...day,
+            exercises: day.exercises.map((item) =>
+              item.exerciseId === normalized.id && (!item.note || item.note === previousNote)
+                ? { ...item, note: normalized.note || '' }
+                : item,
+            ),
+          })),
+        }))
+        : current.workouts;
+      return {
+        ...current,
+        workouts,
+        customExercises: previous
+          ? current.customExercises.map((item) => item.id === normalized.id ? normalized : item)
+          : [normalized, ...current.customExercises],
+      };
+    });
     const intent = exerciseDraftIntent;
     closeExerciseDraft();
     if (intent === 'add-to-day') {

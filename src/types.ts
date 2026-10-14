@@ -57,6 +57,7 @@ export type StudioData = {
   version: 1;
   workouts: Workout[];
   customExercises: Exercise[];
+  exerciseNotesMigrated?: boolean;
   selectedWorkoutId: string | null;
   updatedAt: string;
 };
