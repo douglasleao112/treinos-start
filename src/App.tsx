@@ -8,7 +8,6 @@ import {
   Copy,
   Database,
   Dumbbell,
-  ExternalLink,
   FileUp,
   GripVertical,
   HardDrive,
@@ -97,13 +96,6 @@ const cloneWorkout = (workout: Workout): Workout => ({
   createdAt: now(),
   updatedAt: now(),
 });
-
-const videoUrl = (exercise?: Exercise) => {
-  if (!exercise) return '';
-  if (exercise.youtubeUrl) return exercise.youtubeUrl;
-  if (exercise.youtubeId) return `https://www.youtube.com/watch?v=${exercise.youtubeId}`;
-  return '';
-};
 
 const workoutExerciseCount = (workout: Workout) => workout.days.reduce((total, day) => total + day.exercises.length, 0);
 
@@ -1073,7 +1065,6 @@ function App() {
         <button className="modal-close" onClick={() => setVideoExercise(null)} aria-label="Fechar vídeo"><X size={20} /></button>
         <div className="video-modal-heading"><div><p className="eyebrow">VÍDEO DO EXERCÍCIO</p><h2>{videoExercise.name}</h2></div><span>{videoExercise.muscleGroup || 'Exercício'}</span></div>
         <div className="video-frame"><iframe src={`https://www.youtube-nocookie.com/embed/${videoExercise.youtubeId}?rel=0`} title={`Execução de ${videoExercise.name}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
-        <div className="modal-actions"><a className="button ghost" href={videoUrl(videoExercise)} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Abrir no YouTube</a><button className="button primary" onClick={() => setVideoExercise(null)}>Fechar</button></div>
       </div></div>}
 
       {toast && <div className={`toast ${toast.tone}`}><span>{toast.tone === 'success' ? <Check size={17} /> : toast.tone === 'error' ? <X size={17} /> : <HardDrive size={17} />}</span>{toast.text}</div>}
